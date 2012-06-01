@@ -117,7 +117,21 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     );
     space.add( parentCube );
 
+//    var impEvent = new engine.Event('LinearImpulse',{impulse: [0, 5]});
+//    impEvent.dispatch(parentCube);
+//
+//    var angEvent = new engine.Event('AngularImpulse',{impulse: 2});
+//    angEvent.dispatch(parentCube);
+
     var task = new engine.FunctionTask( function() {
+      var cubePosition = new engine.math.Vector3( space.findNamed( "cube").findComponent( "Transform").position);
+      if (cubePosition[1] < -1.5){
+        var impEvent = new engine.Event('LinearImpulse',{impulse: [0, 1]});
+        impEvent.dispatch(parentCube);
+
+        var angEvent = new engine.Event('AngularImpulse',{impulse: 0.1});
+        angEvent.dispatch(parentCube);
+      }
 //      var cubeRotation = new engine.math.Vector3( space.findNamed( "cube" ).findComponent( "Transform" ).rotation );
 //      cubeRotation = engine.math.vector3.add( cubeRotation, [0, space.clock.delta * 0.0003, 0] );
 //      space.findNamed( "cube" ).findComponent( "Transform" ).setRotation( cubeRotation );
