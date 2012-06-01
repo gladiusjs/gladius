@@ -1,14 +1,7 @@
 document.addEventListener( "DOMContentLoaded", function( e ) {
 
   require.config({
-    baseUrl: "../../lib",
-    paths: {
-      "src": "../src",
-      "base": "../src/base",
-      "common": "../src/common",
-      "core": "../src/core",
-      "extensions": "../src/extensions"
-    }
+    baseUrl: "../.."
   });
   
   require( 
@@ -36,8 +29,15 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           canvas: document.getElementById( "test-canvas" )
         }
       };
+
+      var box2dOptions = {
+        resolver: {
+          gravity: [0,-1]
+        }
+      };
+
       engine.registerExtension( cubicvrExtension, cubicvrOptions );
-      engine.registerExtension( box2dExtension);
+      engine.registerExtension( box2dExtension, box2dOptions);
 
       var resources = {};
 
@@ -118,9 +118,9 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     space.add( parentCube );
 
     var task = new engine.FunctionTask( function() {
-      var cubeRotation = new engine.math.Vector3( space.findNamed( "cube" ).findComponent( "Transform" ).rotation );
-      cubeRotation = engine.math.vector3.add( cubeRotation, [0, space.clock.delta * 0.0003, 0] );
-      space.findNamed( "cube" ).findComponent( "Transform" ).setRotation( cubeRotation );
+//      var cubeRotation = new engine.math.Vector3( space.findNamed( "cube" ).findComponent( "Transform" ).rotation );
+//      cubeRotation = engine.math.vector3.add( cubeRotation, [0, space.clock.delta * 0.0003, 0] );
+//      space.findNamed( "cube" ).findComponent( "Transform" ).setRotation( cubeRotation );
 //
 //      var cameraRotation = new engine.math.Vector3( space.findNamed( "camera" ).findComponent( "Transform" ).rotation );
 //      cameraRotation = engine.math.vector3.add( cameraRotation, [0, space.clock.delta * 0.0003, 0] );
