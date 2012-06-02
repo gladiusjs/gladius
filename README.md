@@ -81,7 +81,7 @@ If you're interested in contributing to the core or other modules, you can find 
 * [gladius-box2d](https://github.com/gladiusjs/gladius-box2d)
 * [gladius-input](https://github.com/gladiusjs/gladius-input)
 
-If you're interested in writing examples or documentation, we'd love to work with you too.
+We would also love to work with anyone interested in writing great examples or documentation.
 
 # License and Notes
 
