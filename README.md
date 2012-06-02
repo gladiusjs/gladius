@@ -85,6 +85,6 @@ We would also love to work with anyone interested in writing great examples or d
 
 # License and Notes
 
-See [LICENSE](https://github.com/gladiusjs/gladius-core/blob/develop/LICENSE) for more information.
+See [LICENSE](https://github.com/gladiusjs/gladius/blob/develop/LICENSE) for more information.
 
 All our logos are handmade by [Sean Martell](https://twitter.com/#!/mart3ll).
