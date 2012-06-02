@@ -6,6 +6,7 @@ Gladius
 * [Mailing List](https://lists.mozilla.org/listinfo/community-games)
 * [Twitter](https://twitter.com/#!/gladiusjs)
 * [Contributors](https://github.com/gladiusjs/gladius-core/contributors)
+* [Blog](https://blog.ottodestrukt.org) -- I usually blog about Gladius here
 
 # Gladius is a 3D game engine
 
