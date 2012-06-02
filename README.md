@@ -43,7 +43,7 @@ var engine = new Gladius();
 You can load Gladius using a script tag:
 
 ````javascript
-<scipt src="gladius-core.js"></script>
+<script src="gladius-core.js"></script>
 <script>
   var engine = new Gladius();
 </script>
@@ -54,8 +54,8 @@ Loading extensions this way will add them as properties on the global Gladius ob
 For example:
 
 ````javascript
-<scipt src="gladius-core.js"></script>
-<scipt src="gladius-cubicvr.js"></script>
+<script src="gladius-core.js"></script>
+<script src="gladius-cubicvr.js"></script>
 <script>
   Gladius; // global engine constructor
   Gladius["gladius-cubicvr"]; // gladius-cubicvr extension you loaded
