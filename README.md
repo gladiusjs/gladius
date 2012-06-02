@@ -32,6 +32,8 @@ Inside the project directory you'll find:
 
 We're working on more modules to add support for user input, 2d and 3d physics, and additional 2d and 3d backends.
 
+### Using requirejs
+
 You can load these modules using requirejs:
 
 ````javascript
@@ -39,9 +41,11 @@ var Gladius = require( "gladius-core" );
 var engine = new Gladius();
 ````
 
-## Using a script tag
+Check out the examples to see how this is done.
 
-You can load Gladius using a script tag:
+### Using a script tag
+
+You can also load Gladius using a script tag:
 
 ````javascript
 <script src="gladius-core.js"></script>
