@@ -38,6 +38,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       engine.registerExtension( inputExtension, inputOptions );
 
       var cubicvr = engine.findExtension( "gladius-cubicvr" );
+      var input = engine.findExtension( "gladius-input" );
       var resources = {};
 
       engine.get(
@@ -84,10 +85,19 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },          
           {
             type: cubicvr.MaterialDefinition,
-            url: '../assets/procedural-material.js',
+            url: "../assets/procedural-material.js",
             load: engine.loaders.procedural,
             onsuccess: function( material ) {
               resources.material = material;
+            },
+            onfailure: function( error ) {
+            }
+          },
+          {
+            type: input.InputMap,
+            url: "tank-controls.json",
+            onsuccess: function( inputMap ) {
+              resources.tankControls = inputMap;
             },
             onfailure: function( error ) {
             }
@@ -104,6 +114,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     var math = engine.math;
     var space = new engine.simulation.Space();
     var cubicvr = engine.findExtension( "gladius-cubicvr" );
+    var input = engine.findExtension( "gladius-input" );
     var Entity = engine.simulation.Entity;
 
     var lightDefinition = new cubicvr.LightDefinition({
@@ -115,7 +126,8 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     space.add( new Entity( "tank-body",
       [
         new engine.core.Transform( [0, 0, 5], [0, 0, 0] ),
-        new cubicvr.Model( resources.tankBody, resources.material )
+        new cubicvr.Model( resources.tankBody, resources.material ),
+        new input.Controller( resources.tankControls )
       ],
       ["tank"]
     ));
@@ -150,7 +162,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       ],
       ["tank"],
       space.findNamed( "tank-turret" )
-    ));    
+    ));
 
     space.add( new Entity( "camera",
       [
