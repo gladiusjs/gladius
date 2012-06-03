@@ -25,11 +25,13 @@ We are also building a set of tools and libraries for building games. They are d
 # Getting Started
 
 Start by cloning the repository or downloading a zipped version from github.
-Inside the project directory you'll find:
+Inside the project directory you'll find pre-built versions of the following modules:
 
 * gladius-core: the engine core; you'll definitely need to load this
 * gladius-cubicvr: CubicVR rendering backend
 
+We tested the examples with these module versions.
+If you build your own modules, the examples might still work, but they also might not.
 We're working on more modules to add support for user input, 2d and 3d physics, and additional 2d and 3d backends.
 
 ### Using requirejs
@@ -70,6 +72,21 @@ For example:
 ## Examples
 
 Check out the `examples` in the top-level project directory.
+You will need a web server that can serve files from the project directory.
+Follow these instructions if you would like to use the server that comes with Gladius.
+
+1. Make sure you have a recent version of `node` installed (>=0.6). See [here](http://nodejs.org/) for details on how to do this for your platform.
+2. Install `jake` globally.
+
+            npm install -g jake
+
+3. Run the web server.
+
+            jake serve
+
+4. Go to the following URL in your browser to view the examples. Be sure to use a recent version of Firefox or Chrome.
+
+            http://localhost:8080/examples
 
 # Contributing
 
