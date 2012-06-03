@@ -125,14 +125,30 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
     var tankLogic = {
       "Update": function( event ) {
-        if( this.owner.hasComponent( "Controller" ) && 
-            this.owner.findComponent( "Controller" ).states["MoveForward"] ) {
-          console.log( this.owner.id, "Move forward!" );
+        if( this.owner.hasComponent( "Controller" ) ) {
+          if( this.owner.findComponent( "Controller" ).states["MoveForward"] ) {
+            console.log( this.owner.id, "Move forward!" );
+          }
+          if( this.owner.findComponent( "Controller" ).states["MoveBackward"] ) {
+            console.log( this.owner.id, "Move backward!" );
+          }
+          if( this.owner.findComponent( "Controller" ).states["TurnLeft"] ) {
+            console.log( this.owner.id, "Turn left!" );
+          }
+          if( this.owner.findComponent( "Controller" ).states["TurnRight"] ) {
+            console.log( this.owner.id, "Turn right!" );
+          }
+          if( this.owner.findComponent( "Controller" ).states["StrafeLeft"] ) {
+            console.log( this.owner.id, "Strafe left!" );
+          }
+          if( this.owner.findComponent( "Controller" ).states["StrafeRight"] ) {
+            console.log( this.owner.id, "Strafe right!" );
+          }
         }
       },
       "Fire": function( event ) {
         console.log( this.owner.id, "Fire!" );
-      }
+      }      
     };
 
     space.add( new Entity( "tank-body",
