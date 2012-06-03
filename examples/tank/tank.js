@@ -121,13 +121,26 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       intensity: 2,
       light_type: cubicvr.LightDefinition.LightTypes.POINT,
       method: cubicvr.LightDefinition.LightingMethods.DYNAMIC
-    })
+    });
+
+    var tankLogic = {
+      "Update": function( event ) {
+        if( this.owner.hasComponent( "Controller" ) && 
+            this.owner.findComponent( "Controller" ).states["MoveForward"] ) {
+          console.log( this.owner.id, "Move forward!" );
+        }
+      },
+      "Fire": function( event ) {
+        console.log( this.owner.id, "Fire!" );
+      }
+    };
 
     space.add( new Entity( "tank-body",
       [
         new engine.core.Transform( [0, 0, 5], [0, 0, 0] ),
         new cubicvr.Model( resources.tankBody, resources.material ),
-        new input.Controller( resources.tankControls )
+        new input.Controller( resources.tankControls ),
+        new engine.logic.Actor( tankLogic )
       ],
       ["tank"]
     ));
