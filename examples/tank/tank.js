@@ -138,6 +138,9 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
               console.log( this.owner.id, "Strafe left!" );
             } else {
               console.log( this.owner.id, "Turn left!" );
+              var transform = this.owner.findComponent( "Transform" );
+              var rotation = transform.rotation;
+              transform.setRotation( math.vector3.add( rotation, [0, 0, space.clock.delta * -0.001] ) );
             }
           }
           if( controller.states["TurnRight"] ) {
@@ -145,6 +148,9 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
               console.log( this.owner.id, "Strafe right!" );
             } else {
               console.log( this.owner.id, "Turn right!" );
+              var transform = this.owner.findComponent( "Transform" );
+              var rotation = transform.rotation;
+              transform.setRotation( math.vector3.add( rotation, [0, 0, space.clock.delta * 0.001] ) );
             }
           }
         }
