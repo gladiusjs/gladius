@@ -25,11 +25,13 @@ We are also building a set of tools and libraries for building games. They are d
 # Getting Started
 
 Start by cloning the repository or downloading a zipped version from github.
-Inside the project directory you'll find:
+Inside the project directory you'll find pre-built versions of the following modules:
 
 * gladius-core: the engine core; you'll definitely need to load this
 * gladius-cubicvr: CubicVR rendering backend
 
+We tested the examples with these module versions.
+If you build your own modules, the examples might still work, but they also might not.
 We're working on more modules to add support for user input, 2d and 3d physics, and additional 2d and 3d backends.
 
 ### Using requirejs
