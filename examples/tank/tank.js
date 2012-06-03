@@ -126,23 +126,26 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     var tankLogic = {
       "Update": function( event ) {
         if( this.owner.hasComponent( "Controller" ) ) {
-          if( this.owner.findComponent( "Controller" ).states["MoveForward"] ) {
+          var controller = this.owner.findComponent( "Controller" );
+          if( controller.states["MoveForward"] ) {
             console.log( this.owner.id, "Move forward!" );
           }
-          if( this.owner.findComponent( "Controller" ).states["MoveBackward"] ) {
+          if( controller.states["MoveBackward"] ) {
             console.log( this.owner.id, "Move backward!" );
           }
-          if( this.owner.findComponent( "Controller" ).states["TurnLeft"] ) {
-            console.log( this.owner.id, "Turn left!" );
+          if( controller.states["TurnLeft"] ) {
+            if( controller.states["StrafeModifier"] ) {
+              console.log( this.owner.id, "Strafe left!" );
+            } else {
+              console.log( this.owner.id, "Turn left!" );
+            }
           }
-          if( this.owner.findComponent( "Controller" ).states["TurnRight"] ) {
-            console.log( this.owner.id, "Turn right!" );
-          }
-          if( this.owner.findComponent( "Controller" ).states["StrafeLeft"] ) {
-            console.log( this.owner.id, "Strafe left!" );
-          }
-          if( this.owner.findComponent( "Controller" ).states["StrafeRight"] ) {
-            console.log( this.owner.id, "Strafe right!" );
+          if( controller.states["TurnRight"] ) {
+            if( controller.states["StrafeModifier"] ) {
+              console.log( this.owner.id, "Strafe right!" );
+            } else {
+              console.log( this.owner.id, "Turn right!" );
+            }
           }
         }
       },
