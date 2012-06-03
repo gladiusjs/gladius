@@ -70,6 +70,21 @@ For example:
 ## Examples
 
 Check out the `examples` in the top-level project directory.
+You will need a web server that can serve files from the project directory.
+Follow these instructions if you would like to use the server that comes with Gladius.
+
+1. Make sure you have a recent version of `node` installed (>=0.6). See [here](http://nodejs.org/) for details on how to do this for your platform.
+2. Install `jake` globally.
+
+            npm install -g jake
+
+3. Run the web server.
+
+            jake serve
+
+4. Go to the following URL in your browser to view the examples. Be sure to use a recent version of Firefox or Chrome.
+
+            http://localhost:8080/examples
 
 # Contributing
 
