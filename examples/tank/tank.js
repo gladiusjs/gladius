@@ -127,21 +127,20 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       "Update": function( event ) {
         if( this.owner.hasComponent( "Controller" ) ) {
           var controller = this.owner.findComponent( "Controller" );
-          var transform = this.owner.findComponent( "Transform" );
-          var direction;
+          var transform = space.findNamed( "tank-body" ).findComponent( "Transform" );
           if( controller.states["MoveForward"] ) {
             console.log( this.owner.id, "Move forward!" );
-            direction = math.transform.translate( [space.clock.delta * 0.001, 0, 0] );
-            direction = math.matrix4.multiply( [direction, transform.absolute()] );
-            console.log( direction );
+            var direction = math.transform.translate( [space.clock.delta * 0.001, 0, 0] );
+            var rotation = math.transform.rotate( transform.rotation );
+            direction = math.matrix4.multiply( [direction, rotation] );
             direction = [direction[12], direction[13], direction[14]];
-            console.log( direction );
             transform.setPosition( math.vector3.add( direction, transform.position ) );
           }
           if( controller.states["MoveBackward"] ) {
-            console.log( this.owner.id, "Move backward!" );
-            direction = math.transform.translate( [space.clock.delta * -0.001, 0, 0] );
-            direction = math.matrix4.multiply( [direction, transform.absolute()] );
+            console.log( this.owner.id, "Move backward!" );            
+            var direction = math.transform.translate( [space.clock.delta * -0.001, 0, 0] );
+            var rotation = math.transform.rotate( transform.rotation );
+            direction = math.matrix4.multiply( [direction, rotation] );
             direction = [direction[12], direction[13], direction[14]];
             transform.setPosition( math.vector3.add( direction, transform.position ) );
           }
@@ -170,14 +169,21 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       }      
     };
 
-    space.add( new Entity( "tank-body",
+    space.add( new Entity( "tank", 
       [
         new engine.core.Transform( [0, 0, 5], [0, 0, 0] ),
-        new cubicvr.Model( resources.tankBody, resources.material ),
         new input.Controller( resources.tankControls ),
         new engine.logic.Actor( tankLogic )
       ],
       ["tank"]
+    ));
+    space.add( new Entity( "tank-body",
+      [
+        new engine.core.Transform(),
+        new cubicvr.Model( resources.tankBody, resources.material )
+      ],
+      ["tank"],
+      space.findNamed( "tank" )
     ));
     space.add( new Entity( "tank-tread",
       [

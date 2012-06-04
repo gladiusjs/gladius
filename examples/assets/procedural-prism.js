@@ -4,19 +4,19 @@ function proc( options ) {
 
   var length = (options.length || 1.0) / 2.0;
   var width = (options.width || 1.0) / 2.0;
-  var height = (options.height || 1.0) / 2.0;
+  var depth = (options.depth || 1.0) / 2.0;
 
   var mesh =
   {
     points: [
-      [ length, -width,  height],
-      [ length,  width,  height],
-      [-length,  width,  height],
-      [-length, -width,  height],
-      [ length, -width, -height],
-      [ length,  width, -height],
-      [-length,  width, -height],
-      [-length, -width, -height]
+      [ length, -width,  depth],
+      [ length,  width,  depth],
+      [-length,  width,  depth],
+      [-length, -width,  depth],
+      [ length, -width, -depth],
+      [ length,  width, -depth],
+      [-length,  width, -depth],
+      [-length, -width, -depth]
     ],
     faces: [
       [0, 1, 2, 3],
