@@ -32,7 +32,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
       var box2dOptions = {
         resolver: {
-          gravity: [0,-1]
+          gravity: [0,-0.5]
         }
       };
 
@@ -82,12 +82,9 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       method: cubicvr.LightDefinition.LightingMethods.DYNAMIC
     });
 
-    var bodyDefinition = new box2d.BodyDefinition();
-    var fixtureDefinition = new box2d.FixtureDefinition({shape:new box2d.BoxShape()});
-
     space.add( new engine.simulation.Entity( "camera",
       [
-        new engine.core.Transform( [0, 0, 0] ),
+        new engine.core.Transform( [0, 0, 5] ),
         new cubicvr.Light( lightDefinition ),
         new cubicvr.Camera( {
           targeted:false
@@ -108,37 +105,43 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         }
       }
     }
-    var parentCube = new engine.simulation.Entity( "cube",
+
+    var bodyDefinition = new box2d.BodyDefinition();
+    var fixtureDefinition = new box2d.FixtureDefinition({shape:new box2d.BoxShape()});
+
+    var firstCube = new engine.simulation.Entity( "cube1",
       [
-        new engine.core.Transform( [0, 0, -6], [0, 0, 0] ),
+        new engine.core.Transform( [-1, 0, -6], [0, 0, 0] ),
         new box2d.Body({bodyDefinition: bodyDefinition, fixtureDefinition: fixtureDefinition}),
         new cubicvr.Model( resources.mesh, resources.material )
       ]
     );
-    space.add( parentCube );
+    space.add( firstCube );
 
-//    var impEvent = new engine.Event('LinearImpulse',{impulse: [0, 5]});
-//    impEvent.dispatch(parentCube);
-//
-//    var angEvent = new engine.Event('AngularImpulse',{impulse: 2});
-//    angEvent.dispatch(parentCube);
+    var secondCube = new engine.simulation.Entity( "cube2",
+      [
+        new engine.core.Transform( [1, 0, -6], [0, 0, 0] ),
+        new box2d.Body({bodyDefinition: bodyDefinition, fixtureDefinition: fixtureDefinition}),
+        new cubicvr.Model( resources.mesh, resources.material )
+      ]
+    );
+    space.add( secondCube );
 
     var task = new engine.FunctionTask( function() {
-      var cubePosition = new engine.math.Vector3( space.findNamed( "cube").findComponent( "Transform").position);
-      if (cubePosition[1] < -1.5){
-        var impEvent = new engine.Event('LinearImpulse',{impulse: [0, 1]});
-        impEvent.dispatch(parentCube);
+      var impEvent = new engine.Event('LinearImpulse',{impulse: [0, 0.5]});
+      var angEvent = new engine.Event('AngularImpulse',{impulse: 0.1});
 
-        var angEvent = new engine.Event('AngularImpulse',{impulse: 0.1});
-        angEvent.dispatch(parentCube);
+      var cubePosition1 = new engine.math.Vector3( space.findNamed( "cube1").findComponent( "Transform").position);
+      if (cubePosition1[1] < -1.5){
+        impEvent.dispatch(firstCube);
+        angEvent.dispatch(firstCube);
       }
-//      var cubeRotation = new engine.math.Vector3( space.findNamed( "cube" ).findComponent( "Transform" ).rotation );
-//      cubeRotation = engine.math.vector3.add( cubeRotation, [0, space.clock.delta * 0.0003, 0] );
-//      space.findNamed( "cube" ).findComponent( "Transform" ).setRotation( cubeRotation );
-//
-//      var cameraRotation = new engine.math.Vector3( space.findNamed( "camera" ).findComponent( "Transform" ).rotation );
-//      cameraRotation = engine.math.vector3.add( cameraRotation, [0, space.clock.delta * 0.0003, 0] );
-//      space.findNamed( "camera" ).findComponent( "Transform" ).setRotation( cameraRotation );
+
+      var cubePosition2 = new engine.math.Vector3( space.findNamed( "cube2").findComponent( "Transform").position);
+      if (cubePosition2[1] < -1.5){
+        impEvent.dispatch(secondCube);
+        angEvent.dispatch(secondCube);
+      }
     }, {
       tags: ["@update"]
     });
