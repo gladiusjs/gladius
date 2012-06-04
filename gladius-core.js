@@ -1870,9 +1870,9 @@ define('matrix/matrix4',['require','./matrix','../vector/vector3'],function ( re
             multiplyVector3: function( m, v, result ) {
                 result = result || vector3.$();
                 
-                result[0] = m[0] * v[0] + m[4] * v[1] + m[8] * v[2] + m[12];
-                result[1] = m[1] * v[0] + m[5] * v[1] + m[9] * v[2] + m[13];
-                result[2] = m[2] * v[0] + m[6] * v[1] + m[10] * v[2] + m[14];
+                result[0] = m[0] * v[0] + m[2] * v[1] + m[3] * v[2];
+                result[1] = m[4] * v[0] + m[5] * v[1] + m[6] * v[2];
+                result[2] = m[8] * v[0] + m[9] * v[1] + m[10] * v[2];
 
                 return result;
             },
@@ -4511,6 +4511,19 @@ if ( typeof define !== "function" ) {
 
 define('core/space',['require','common/guid','core/entity','core/clock'],function( require ) {
 
+  function Space( clock ) {
+    // This will normally be the system simulation clock, but for a UI space
+    // it might be the realtime clock instead.
+    this.clock = new Clock( clock.signal ); // This clock controls updates for
+                                            // all entities in this space
+    this.id = guid();
+    this.size = 0; // The number of entities in this space
+
+    this._entities = {}; // Maps entity ID to object
+    this._nameIndex = {}; // Maps name to entity ID
+    this._tagIndex = {}; // Maps tag to entity ID
+  }
+
   var guid = require( "common/guid" );
   var Entity = require( "core/entity" );
   var Clock = require( "core/clock" );
@@ -4545,6 +4558,8 @@ define('core/space',['require','common/guid','core/entity','core/clock'],functio
         this.add.call( this, entity._children[childId] );
       }
     }
+
+    return this;
   }
 
   function remove( entity ) {
@@ -4574,7 +4589,12 @@ define('core/space',['require','common/guid','core/entity','core/clock'],functio
           this.remove.call( this, entity._children[childId] );
         }
       }
+    } else {
+      throw new Error("attempted to remove unavailable entity " +
+        entity.toString());
     }
+
+    return this;
   }
   
   function findNamed( name ) {
@@ -4652,19 +4672,6 @@ define('core/space',['require','common/guid','core/entity','core/clock'],functio
     }
     
     return result;
-  }
-
-  function Space( clock ) {
-    // This will normally be the system simulation clock, but for a UI space
-    // it might be the realtime clock instead.
-    this.clock = new Clock( clock.signal ); // This clock controls updates for
-                                            // all entities in this space
-    this.id = guid();
-    this.size = 0; // The number of entities in this space
-
-    this._entities = {}; // Maps entity ID to object
-    this._nameIndex = {}; // Maps name to entity ID
-    this._tagIndex = {}; // Maps tag to entity ID
   }
 
   Space.prototype = {
@@ -4830,7 +4837,154 @@ if ( typeof define !== "function" ) {
   var define = require( "amdefine" )( module );
 }
 
-define('core/engine',['require','_math','common/multicast-delegate','core/request-animation-frame-loop','core/clock','core/dependency-scheduler','core/function-task','core/timer','core/event','core/get','core/loaders/default','core/loaders/procedural','base/component','base/service','base/extension','core/space','core/entity','core/components/transform','core/resources/script'],function ( require ) {
+define('core/services/updater',['require','base/service','core/event'],function ( require ) {
+
+  var Service = require( "base/service" );
+  var Event = require( "core/event" );
+
+  var Updater = function( scheduler, options ) {
+    options = options || {};
+    
+    var schedules = {
+        "update": {
+          tags: ["@update", "logic"],
+          dependsOn: ["physics"]
+        }
+    };
+    Service.call( this, scheduler, schedules );
+  };
+
+  function update() {
+    var registeredComponents = this._registeredComponents;
+
+    // Update all logic components
+    var component;
+    var updateEvent = new Event( 'Update', false );
+    for( var componentType in registeredComponents ) {
+      for( var entityId in registeredComponents[componentType] ) {
+        component = registeredComponents[componentType][entityId];
+        while( component.handleQueuedEvent() ) {}
+        updateEvent.dispatch( component );
+      }
+    }
+  }
+
+  Updater.prototype = new Service();
+  Updater.prototype.constructor = Updater;
+  Updater.prototype.update = update;
+
+  return Updater;
+
+});
+if ( typeof define !== "function" ) {
+  var define = require( "amdefine" )( module );
+}
+
+define('core/components/actor',['require','base/component','common/extend'],function( require ) {
+
+  var Component = require( "base/component" );
+  var extend = require( "common/extend" );
+
+  var Actor = function( service, eventMap ) {
+    Component.call( this, "Logic", service, [] );
+
+    eventMap = eventMap || {};
+
+    // Set up event handlers
+    var i, l;
+    var eventNames = Object.keys( eventMap );
+    for( i = 0, l = eventNames.length; i < l; ++ i ) {
+      var eventName = eventNames[i];
+      this["on" + eventName] = eventMap[eventName];
+    }
+  };
+  Actor.prototype = new Component();
+  Actor.prototype.constructor = Actor;
+
+  function onEntitySpaceChanged( event ) {
+    var data = event.data;
+    if( data.previous === null && data.current !== null && this.owner !== null ) {
+      this.provider.registerComponent( this.owner.id, this );
+    }
+
+    if( data.previous !== null && data.current === null && this.owner !== null ) {
+      this.provider.unregisterComponent( this.owner.id, this );
+    }
+  }
+
+  function onComponentOwnerChanged( event ) {
+    var data = event.data;
+    if( data.previous === null && this.owner !== null ) {
+      this.provider.registerComponent( this.owner.id, this );
+    }
+
+    if( this.owner === null && data.previous !== null ) {
+      this.provider.unregisterComponent( data.previous.id, this );
+    }
+  }
+
+  function onEntityActivationChanged( event ) {
+    var active = event.data;
+    if( active ) {
+      this.provider.registerComponent( this.owner.id, this );
+    } else {
+      this.provider.unregisterComponent( this.owner.id, this );
+    }
+  }
+
+  var prototype = {
+    onEntitySpaceChanged: onEntitySpaceChanged,
+    onComponentOwnerChanged: onComponentOwnerChanged,
+    onEntityActivationChanged: onEntityActivationChanged
+  };
+  extend( Actor.prototype, prototype );
+
+  return Actor;
+
+});
+define('core/resources/event-map',['require','core/get','core/resources/script'],function( require ) {
+
+  var get = require( "core/get" );
+  var Script = require( "core/resources/script" );
+
+  var EventMap = function( data ) {
+    data = data || {};
+    var map = {};
+
+    var getRequests = [];
+    var eventNames = Object.keys( data );
+
+    for( var eventName in eventNames ) {
+      if( "string" === typeof data[eventName] ) {
+        getRequests.push({
+          type: Script,
+          url: data[eventName],
+          onsuccess: function( script ) {
+            map[eventName] = script;
+          },
+          onfailure: function( error ) {
+            console.log( "error loading script: " + data[eventName] );
+            throw error;
+          }
+        });
+      } else if( "function" === typeof data[eventName] ) {
+        map[eventName] = data[eventName];
+      }
+    }
+    get( getRequests );
+
+    return map;
+  };
+
+  return EventMap;
+
+});
+
+if ( typeof define !== "function" ) {
+  var define = require( "amdefine" )( module );
+}
+
+define('core/engine',['require','_math','common/multicast-delegate','core/request-animation-frame-loop','core/clock','core/dependency-scheduler','core/function-task','core/timer','core/event','core/get','core/loaders/default','core/loaders/procedural','base/component','base/service','base/extension','core/space','core/entity','core/components/transform','core/resources/script','core/services/updater','core/components/actor','core/resources/event-map'],function ( require ) {
   
   var _Math = require( "_math" );
   
@@ -4860,11 +5014,26 @@ define('core/engine',['require','_math','common/multicast-delegate','core/reques
 
   var core = new base.Extension( "core", {
     components: {
-      Transform: require( "core/components/transform" )
+      "Transform": require( "core/components/transform" )
     },
     resources: {
-      Script: require( "core/resources/script" )
+      "Script": require( "core/resources/script" )
     }    
+  });
+
+  var logic = new base.Extension( "logic", {
+    services: {
+      "updater": {
+        service: require( "core/services/updater" ),
+        components: {
+          "Actor": require( "core/components/actor" )
+        },
+        resources: {}
+      }
+    },
+    resources: {
+      "EventMap": require( "core/resources/event-map" )
+    }
   });
   
   function simulationLoop() {
@@ -4928,6 +5097,9 @@ define('core/engine',['require','_math','common/multicast-delegate','core/reques
 
     // Register core extension
     this.registerExtension( core );
+
+    // Register logic extension
+    this.registerExtension( logic );
   };
   
   function suspend() {
