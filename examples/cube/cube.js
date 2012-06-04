@@ -1,66 +1,55 @@
 document.addEventListener( "DOMContentLoaded", function( e ) {
 
-  require.config({
-    baseUrl: "../.."
+  var engine = new Gladius();
+
+  // Engine monitor setup
+  function monitor( engine ) {
+    debugger;
+    engine.detach( monitor );
+  }
+  document.addEventListener( "keydown", function( event ) {
+    var code = event.which || event.keyCode;
+    if( code === 0x4D && event.ctrlKey && event.altKey ) {
+      engine.attach( monitor );
+    }
   });
-  
-  require( 
-    [ "gladius-core", 
-      "gladius-cubicvr" ],
-    function( Gladius, cubicvrExtension ) {
 
-      var engine = new Gladius();
+  var cubicvrOptions = {
+    renderer: {
+      canvas: document.getElementById( "test-canvas" )
+    }
+  };
+  engine.registerExtension( Gladius["gladius-cubicvr"], cubicvrOptions );
 
-      // Engine monitor setup
-      function monitor( engine ) {
-        debugger;
-        engine.detach( monitor );
+  var resources = {};
+
+  engine.get(
+    [
+      {
+        type: engine["gladius-cubicvr"].Mesh,
+        url: '../assets/procedural-mesh.js',
+        load: engine.loaders.procedural,
+        onsuccess: function( mesh ) {
+          resources.mesh = mesh;
+        },
+        onfailure: function( error ) {
+        }
+      },
+      {
+        type: engine["gladius-cubicvr"].MaterialDefinition,
+        url: '../assets/procedural-material.js',
+        load: engine.loaders.procedural,
+        onsuccess: function( material ) {
+          resources.material = material;
+        },
+        onfailure: function( error ) {
+        }
       }
-      document.addEventListener( "keydown", function( event ) {
-        var code = event.which || event.keyCode;
-        if( code === 0x4D && event.ctrlKey && event.altKey ) {
-          engine.attach( monitor );
-        }
-      });
-
-      var cubicvrOptions = {
-        renderer: {
-          canvas: document.getElementById( "test-canvas" )
-        }
-      };
-      engine.registerExtension( cubicvrExtension, cubicvrOptions );
-
-      var resources = {};
-
-      engine.get(
-        [
-          {
-            type: engine["gladius-cubicvr"].Mesh,
-            url: 'procedural-mesh.js',
-            load: engine.loaders.procedural,
-            onsuccess: function( mesh ) {
-              resources.mesh = mesh;
-            },
-            onfailure: function( error ) {
-            }
-          },
-          {
-            type: engine["gladius-cubicvr"].MaterialDefinition,
-            url: 'procedural-material.js',
-            load: engine.loaders.procedural,
-            onsuccess: function( material ) {
-              resources.material = material;
-            },
-            onfailure: function( error ) {
-            }
-          }
-        ],
-        {
-          oncomplete: game.bind( null, engine, resources )
-        }
-      );
-
-  });
+    ],
+    {
+      oncomplete: game.bind( null, engine, resources )
+    }
+  );
 
   function game( engine, resources ) {
     var space = new engine.simulation.Space();
