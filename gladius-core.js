@@ -1870,9 +1870,9 @@ define('matrix/matrix4',['require','./matrix','../vector/vector3'],function ( re
             multiplyVector3: function( m, v, result ) {
                 result = result || vector3.$();
                 
-                result[0] = m[0] * v[0] + m[4] * v[1] + m[8] * v[2] + m[12];
-                result[1] = m[1] * v[0] + m[5] * v[1] + m[9] * v[2] + m[13];
-                result[2] = m[2] * v[0] + m[6] * v[1] + m[10] * v[2] + m[14];
+                result[0] = m[0] * v[0] + m[2] * v[1] + m[3] * v[2];
+                result[1] = m[4] * v[0] + m[5] * v[1] + m[6] * v[2];
+                result[2] = m[8] * v[0] + m[9] * v[1] + m[10] * v[2];
 
                 return result;
             },
@@ -4857,7 +4857,7 @@ define('core/services/updater',['require','base/service','core/event'],function 
   function update() {
     var registeredComponents = this._registeredComponents;
 
-    // Update all graphics components
+    // Update all logic components
     var component;
     var updateEvent = new Event( 'Update', false );
     for( var componentType in registeredComponents ) {

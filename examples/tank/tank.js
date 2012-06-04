@@ -127,18 +127,29 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       "Update": function( event ) {
         if( this.owner.hasComponent( "Controller" ) ) {
           var controller = this.owner.findComponent( "Controller" );
+          var transform = this.owner.findComponent( "Transform" );
+          var direction;
           if( controller.states["MoveForward"] ) {
             console.log( this.owner.id, "Move forward!" );
+            direction = math.transform.translate( [space.clock.delta * 0.001, 0, 0] );
+            direction = math.matrix4.multiply( [direction, transform.absolute()] );
+            console.log( direction );
+            direction = [direction[12], direction[13], direction[14]];
+            console.log( direction );
+            transform.setPosition( math.vector3.add( direction, transform.position ) );
           }
           if( controller.states["MoveBackward"] ) {
             console.log( this.owner.id, "Move backward!" );
+            direction = math.transform.translate( [space.clock.delta * -0.001, 0, 0] );
+            direction = math.matrix4.multiply( [direction, transform.absolute()] );
+            direction = [direction[12], direction[13], direction[14]];
+            transform.setPosition( math.vector3.add( direction, transform.position ) );
           }
           if( controller.states["TurnLeft"] ) {
             if( controller.states["StrafeModifier"] ) {
               console.log( this.owner.id, "Strafe left!" );
             } else {
               console.log( this.owner.id, "Turn left!" );
-              var transform = this.owner.findComponent( "Transform" );
               var rotation = transform.rotation;
               transform.setRotation( math.vector3.add( rotation, [0, 0, space.clock.delta * -0.001] ) );
             }
@@ -148,7 +159,6 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
               console.log( this.owner.id, "Strafe right!" );
             } else {
               console.log( this.owner.id, "Turn right!" );
-              var transform = this.owner.findComponent( "Transform" );
               var rotation = transform.rotation;
               transform.setRotation( math.vector3.add( rotation, [0, 0, space.clock.delta * 0.001] ) );
             }
