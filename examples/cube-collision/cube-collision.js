@@ -37,7 +37,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       };
 
       engine.registerExtension( cubicvrExtension, cubicvrOptions );
-      engine.registerExtension( box2dExtension, box2dOptions);
+      engine.registerExtension( box2dExtension);//, box2dOptions);
 
       var resources = {};
 
@@ -59,6 +59,26 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
             load: engine.loaders.procedural,
             onsuccess: function( material ) {
               resources.material = material;
+            },
+            onfailure: function( error ) {
+            }
+          },
+          {
+            type: engine["gladius-cubicvr"].MaterialDefinition,
+            url: 'procedural-material.js?colorR=0&colorG=0&colorB=1',
+            load: engine.loaders.procedural,
+            onsuccess: function( material ) {
+              resources.materialBlue = material;
+            },
+            onfailure: function( error ) {
+            }
+          },
+          {
+            type: engine["gladius-cubicvr"].MaterialDefinition,
+            url: 'procedural-material.js?colorR=0&colorG=1&colorB=0',
+            load: engine.loaders.procedural,
+            onsuccess: function( material ) {
+              resources.materialGreen = material;
             },
             onfailure: function( error ) {
             }
@@ -107,41 +127,51 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     }
 
     var bodyDefinition = new box2d.BodyDefinition();
-    var fixtureDefinition = new box2d.FixtureDefinition({shape:new box2d.BoxShape()});
+    var fixtureDefinition = new box2d.FixtureDefinition({shape:new box2d.BoxShape(0.25,0.25)});
 
-    var firstCube = new engine.simulation.Entity( "cube1",
-      [
-        new engine.core.Transform( [-1, 0, -6], [0, 0, 0] ),
-        new box2d.Body({bodyDefinition: bodyDefinition, fixtureDefinition: fixtureDefinition}),
-        new cubicvr.Model( resources.mesh, resources.material )
-      ]
-    );
-    space.add( firstCube );
+    for (var cubeIndex = 0; cubeIndex < 5; cubeIndex++){
 
-    var secondCube = new engine.simulation.Entity( "cube2",
-      [
-        new engine.core.Transform( [1, 0, -6], [0, 0, 0] ),
-        new box2d.Body({bodyDefinition: bodyDefinition, fixtureDefinition: fixtureDefinition}),
-        new cubicvr.Model( resources.mesh, resources.material )
-      ]
-    );
-    space.add( secondCube );
+      var firstBody = new box2d.Body({bodyDefinition: bodyDefinition, fixtureDefinition: fixtureDefinition});
+
+      firstBody.onContactBegin = function(event){
+        console.log("First cube number " + cubeIndex + " contact begin");
+        this.owner.findComponent( "Model").setMaterialDefinition(resources.materialBlue);
+      };
+      firstBody.onContactEnd = function(event){
+        console.log("First cube number " + cubeIndex + " contact end");
+      };
+      var firstCube = new engine.simulation.Entity( "cube1",
+        [
+          new engine.core.Transform( [3 + cubeIndex * 1.5, 0.125, 0], [0, 0, 0], [0.5, 0.5, 0.5] ),
+          firstBody,
+          new cubicvr.Model( resources.mesh, resources.material )
+        ]
+      );
+      space.add( firstCube );
+
+      var secondBody = new box2d.Body({bodyDefinition: bodyDefinition, fixtureDefinition: fixtureDefinition});
+
+      secondBody.onContactBegin = function(event){
+        console.log("Second cube number " + cubeIndex + " contact begin");
+        this.owner.findComponent( "Model").setMaterialDefinition(resources.materialGreen);
+      };
+      secondBody.onContactEnd = function(event){
+        console.log("Second cube number " + cubeIndex + " contact end");
+      };
+
+      var secondCube = new engine.simulation.Entity( "cube2",
+        [
+          new engine.core.Transform( [-3 - cubeIndex * 1.5, -0.125, 0], [0, 0, 0], [0.5, 0.5, 0.5] ),
+          secondBody,
+          new cubicvr.Model( resources.mesh, resources.material )
+        ]
+      );
+      space.add( secondCube );
+      new engine.Event("LinearImpulse", {impulse: [-0.25,0]}).dispatch(firstCube);
+      new engine.Event("LinearImpulse", {impulse: [0.25,0]}).dispatch(secondCube);
+    }
 
     var task = new engine.FunctionTask( function() {
-      var impEvent = new engine.Event('LinearImpulse',{impulse: [0, 0.5]});
-      var angEvent = new engine.Event('AngularImpulse',{impulse: 0.1});
-
-      var cubePosition1 = new engine.math.Vector3( space.findNamed( "cube1").findComponent( "Transform").position);
-      if (cubePosition1[1] < -1.5){
-        impEvent.dispatch(firstCube);
-        angEvent.dispatch(firstCube);
-      }
-
-      var cubePosition2 = new engine.math.Vector3( space.findNamed( "cube2").findComponent( "Transform").position);
-      if (cubePosition2[1] < -1.5){
-        impEvent.dispatch(secondCube);
-        angEvent.dispatch(secondCube);
-      }
     }, {
       tags: ["@update"]
     });

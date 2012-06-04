@@ -23688,11 +23688,16 @@ define('src/components/model',['require','common/extend','base/component'],funct
     Component.call( this, "Model", service, ["Transform"] );
 
     this._cubicvrMesh = mesh || new service.target.context.Mesh();
-    this._cubicvrMaterialDefinition = materialDefinition || 
+    this._cubicvrMaterialDefinition = materialDefinition ||
       new service.target.context.Material();
   };
   Model.prototype = new Component();
   Model.prototype.constructor = Model;
+
+  function setMaterialDefinition(materialDefinition){
+    this._cubicvrMaterialDefinition = materialDefinition ||
+      new service.target.context.Material();
+  }
 
   function onUpdate( event ) {
   }
@@ -23729,6 +23734,7 @@ define('src/components/model',['require','common/extend','base/component'],funct
   }
 
   var prototype = {
+    setMaterialDefinition: setMaterialDefinition,
     onUpdate: onUpdate,
     onEntitySpaceChanged: onEntitySpaceChanged,
     onComponentOwnerChanged: onComponentOwnerChanged,
