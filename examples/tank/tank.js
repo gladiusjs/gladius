@@ -147,6 +147,11 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           if( controller.states["TurnLeft"] ) {
             if( controller.states["StrafeModifier"] ) {
               console.log( this.owner.id, "Strafe left!" );
+              var direction = math.transform.translate( [0, space.clock.delta * -0.001, 0] );
+              var rotation = math.transform.rotate( transform.rotation );
+              direction = math.matrix4.multiply( [direction, rotation] );
+              direction = [direction[12], direction[13], direction[14]];
+              transform.setPosition( math.vector3.add( direction, transform.position ) );              
             } else {
               console.log( this.owner.id, "Turn left!" );
               var rotation = transform.rotation;
@@ -156,6 +161,11 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           if( controller.states["TurnRight"] ) {
             if( controller.states["StrafeModifier"] ) {
               console.log( this.owner.id, "Strafe right!" );
+              var direction = math.transform.translate( [0, space.clock.delta * 0.001, 0] );
+              var rotation = math.transform.rotate( transform.rotation );
+              direction = math.matrix4.multiply( [direction, rotation] );
+              direction = [direction[12], direction[13], direction[14]];
+              transform.setPosition( math.vector3.add( direction, transform.position ) );   
             } else {
               console.log( this.owner.id, "Turn right!" );
               var rotation = transform.rotation;
@@ -166,12 +176,14 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       },
       "Fire": function( event ) {
         console.log( this.owner.id, "Fire!" );
-      }      
+      }
     };
 
+    // This parent entity will let us adjust the position and orientation of the
+    // tank, and handle game logic events
     space.add( new Entity( "tank", 
       [
-        new engine.core.Transform( [0, 0, 5], [0, 0, 0] ),
+        new engine.core.Transform( [0, 0, 5], [0, 0, math.TAU/4], [0.5, 0.5, 0.5] ),
         new input.Controller( resources.tankControls ),
         new engine.logic.Actor( tankLogic )
       ],
