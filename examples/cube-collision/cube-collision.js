@@ -45,7 +45,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         [
           {
             type: engine["gladius-cubicvr"].Mesh,
-            url: 'procedural-mesh.js',
+            url: '../assets/procedural-mesh.js',
             load: engine.loaders.procedural,
             onsuccess: function( mesh ) {
               resources.mesh = mesh;
@@ -55,7 +55,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: engine["gladius-cubicvr"].MaterialDefinition,
-            url: 'procedural-material.js',
+            url: '../assets/procedural-material.js',
             load: engine.loaders.procedural,
             onsuccess: function( material ) {
               resources.material = material;
@@ -65,7 +65,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: engine["gladius-cubicvr"].MaterialDefinition,
-            url: 'procedural-material.js?colorR=0&colorG=0&colorB=1',
+            url: '../assets/procedural-material.js?colorR=0&colorG=0&colorB=1',
             load: engine.loaders.procedural,
             onsuccess: function( material ) {
               resources.materialBlue = material;
@@ -75,7 +75,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: engine["gladius-cubicvr"].MaterialDefinition,
-            url: 'procedural-material.js?colorR=0&colorG=1&colorB=0',
+            url: '../assets/procedural-material.js?colorR=0&colorG=1&colorB=0',
             load: engine.loaders.procedural,
             onsuccess: function( material ) {
               resources.materialGreen = material;
