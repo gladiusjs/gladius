@@ -65,7 +65,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: engine["gladius-cubicvr"].MaterialDefinition,
-            url: '../assets/procedural-material.js?colorR=0&colorG=0&colorB=1',
+            url: '../assets/procedural-material.js?R=0&G=0&B=1',
             load: engine.loaders.procedural,
             onsuccess: function( material ) {
               resources.materialBlue = material;
@@ -75,7 +75,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: engine["gladius-cubicvr"].MaterialDefinition,
-            url: '../assets/procedural-material.js?colorR=0&colorG=1&colorB=0',
+            url: '../assets/procedural-material.js?R=0&G=1&B=0',
             load: engine.loaders.procedural,
             onsuccess: function( material ) {
               resources.materialGreen = material;

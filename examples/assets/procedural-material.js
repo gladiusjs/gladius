@@ -1,21 +1,11 @@
 function proc( options ) {
   options = options || {};
-  if (options.colorR === undefined){
-    options.colorR = 1;
-  }else{
-    options.colorR = parseInt(options.colorR);
-  }
-  if (options.colorG === undefined){
-    options.colorG = 0.2
-  }else{
-    options.colorG = parseInt(options.colorG);
-  }
-  if (options.colorB === undefined){
-    options.colorB = 0;
-  }else{
-    options.colorB = parseInt(options.colorB);
-  }
+
+  var R = (options.hasOwnProperty( "R" )) ? parseInt( options.R ) : 1.0;
+  var G = (options.hasOwnProperty( "G" )) ? parseInt( options.G ) : 0.2;
+  var B = (options.hasOwnProperty( "B" )) ? parseInt( options.B ) : 0.0;
+
   return {
-    color: [options.colorR, options.colorG, options.colorB]
+    color: [R, G, B]
   };
 }
