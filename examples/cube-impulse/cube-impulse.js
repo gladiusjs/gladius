@@ -37,7 +37,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       };
 
       engine.registerExtension( cubicvrExtension, cubicvrOptions );
-      engine.registerExtension( box2dExtension, box2dOptions);
+      engine.registerExtension( box2dExtension);//, box2dOptions);
 
       var resources = {};
 
@@ -89,6 +89,18 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         new cubicvr.Camera( {
           targeted:false
         } )
+      ]
+    ));
+
+    space.add(new engine.simulation.Entity( "gravity",
+      [
+        new box2d.Force({direction:[0,-1], magnitude:1})
+      ]
+    ));
+
+    space.add(new engine.simulation.Entity( "antiGravity",
+      [
+        new box2d.Force({direction:[0,1], magnitude:4})
       ]
     ));
 
