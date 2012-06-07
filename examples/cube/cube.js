@@ -2,15 +2,18 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
   var engine = new Gladius();
 
-  // Engine monitor setup
-  function monitor( engine ) {
-    debugger;
-    engine.detach( monitor );
-  }
   document.addEventListener( "keydown", function( event ) {
     var code = event.which || event.keyCode;
     if( code === 0x4D && event.ctrlKey && event.altKey ) {
-      engine.attach( monitor );
+      if( engine.simulationClock.isStarted() ) {
+        engine.simulationClock.pause();
+        window.engine = engine;
+        console.log( "suspend" );
+      } else {
+        delete window.engine;
+        engine.simulationClock.start();
+        console.log( "resume" );
+      }
     }
   });
 
