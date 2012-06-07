@@ -52,7 +52,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
   );
 
   function game( engine, resources ) {
-    var space = new engine.simulation.Space();
+    var space = new engine.SimulationSpace();
     var cubicvr = engine.findExtension( "gladius-cubicvr" );
 
     var lightDefinition = new cubicvr.LightDefinition({
@@ -61,7 +61,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       method: cubicvr.LightDefinition.LightingMethods.DYNAMIC
     })
 
-    space.add( new engine.simulation.Entity( "camera",
+    space.add( new engine.Entity( "camera",
       [
         new engine.core.Transform( [0, 0, 0] ),
         new cubicvr.Camera({
@@ -70,24 +70,24 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         new cubicvr.Light()
       ]
     ));
-    space.add( new engine.simulation.Entity( "light-center",
+    space.add( new engine.Entity( "light-center",
       [
         new engine.core.Transform( [0, 0, 5], [engine.math.TAU, engine.math.TAU, engine.math.TAU] )
       ]
     ));
-    space.add( new engine.simulation.Entity( "light-marker",
+    space.add( new engine.Entity( "light-marker",
       [
         new engine.core.Transform( [3, 0, 0], [0, 0, 0], [0.1, 0.1, 0.1] ),
         new cubicvr.Model( resources.mesh, resources.material )
       ]
     ));
-    space.add( new engine.simulation.Entity( "light-source",
+    space.add( new engine.Entity( "light-source",
       [
         new engine.core.Transform( [3, 0, 0], [0, 0, 0], [1, 1, 1] ),
         new cubicvr.Light( lightDefinition )
       ]
     ));
-    var parentCube = new engine.simulation.Entity( "cube",
+    var parentCube = new engine.Entity( "cube",
       [
         new engine.core.Transform( [0, 0, 6], [0, -engine.math.TAU/8, engine.math.TAU/8] ),
         new cubicvr.Model( resources.mesh, resources.material )

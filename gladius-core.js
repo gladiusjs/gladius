@@ -5007,10 +5007,8 @@ define('core/engine',['require','_math','common/multicast-delegate','core/reques
     Extension: require( "base/extension" )
   };
 
-  var simulation = {
-    Space: require( "core/space" ),
-    Entity: require( "core/entity" )
-  };
+  var Space = require( "core/space" );
+  var Entity = require( "core/entity" );
 
   var core = new base.Extension( "core", {
     components: {
@@ -5046,9 +5044,8 @@ define('core/engine',['require','_math','common/multicast-delegate','core/reques
     var delta = timestamp - this.cachedTimestamp;
     this.cachedTimestamp = timestamp;
     
-    // Update system clocks
+    // Update system clock
     this.realClock.update( delta );
-    this.simulationClock.update( delta );
     
     // Update scheduler and run all tasks
     this._scheduler.update();
@@ -5069,7 +5066,8 @@ define('core/engine',['require','_math','common/multicast-delegate','core/reques
 
     // System clocks
     this.realClock = new Clock();
-    this.simulationClock = new Clock();
+    // The simulation clock receives update signals from the realtime clock
+    this.simulationClock = new Clock( this.realClock.signal );
     
     this._scheduler = new Scheduler();
     
@@ -5086,10 +5084,10 @@ define('core/engine',['require','_math','common/multicast-delegate','core/reques
     // Base prototypes, useful for extending the engine at runtime
     this.base = base;
 
-    this.simulation = {
-      Space: simulation.Space.bind( null, this.simulationClock ),
-      Entity: simulation.Entity
-    };
+    this.Space = Space;
+    this.RealSpace = Space.bind( null, this.realClock );
+    this.SimulationSpace = Space.bind( null, this.simulationClock );
+    this.Entity = Entity;
   
     // Registered extensions go in here; They are also exposed as properties
     // on the engine instance
