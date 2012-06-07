@@ -30,14 +30,8 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         }
       };
 
-      var box2dOptions = {
-        resolver: {
-          gravity: [0,-1]
-        }
-      };
-
       engine.registerExtension( cubicvrExtension, cubicvrOptions );
-      engine.registerExtension( box2dExtension);//, box2dOptions);
+      engine.registerExtension( box2dExtension );
 
       var resources = {};
 
@@ -94,13 +88,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
     space.add(new engine.simulation.Entity( "gravity",
       [
-        new box2d.Force({direction:[0,-1], magnitude:1})
-      ]
-    ));
-
-    space.add(new engine.simulation.Entity( "antiGravity",
-      [
-        new box2d.Force({direction:[0,1], magnitude:4})
+        new box2d.Force({direction:[0,-1], magnitude:1, forceType:box2d.Force.ForceTypes.GLOBAL})
       ]
     ));
 

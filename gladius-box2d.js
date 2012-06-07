@@ -90478,7 +90478,8 @@ define('src/services/resolver',['require','base/service','core/event','_math','b
     // Also make sure that we transform each force according to the transforms of whatever parent objects that transform has
     // this would be a good unit test
     var totalForce = new math.Vector2();
-    for (var entityId in registeredComponents["Force"]){
+    var entityId;
+    for (entityId in registeredComponents["Force"]){
       math.vector2.add(totalForce, registeredComponents["Force"][entityId].getForce(), totalForce);
     }
 
@@ -90488,7 +90489,7 @@ define('src/services/resolver',['require','base/service','core/event','_math','b
     // Update all physics components
     var updateEvent = new Event( 'Update', false );
     for( var componentType in registeredComponents ) {
-      for( var entityId in registeredComponents[componentType] ) {
+      for( entityId in registeredComponents[componentType] ) {
         component = registeredComponents[componentType][entityId];
         space = component.owner.space;
         while( component.handleQueuedEvent() ) {}
@@ -90754,6 +90755,12 @@ define('src/components/force',['require','box2d','common/extend','base/component
       this._magnitude = 0;
     }
 
+    if (options.forceType){
+      this._forceType = options.forceType;
+    }else{
+      this._forceType = 0;
+    }
+
     Object.defineProperty(this, 'active', {
       get: function getActive() {
         return this._active ? true : false;
@@ -90824,6 +90831,10 @@ define('src/components/force',['require','box2d','common/extend','base/component
     onEntityActivationChanged: onEntityActivationChanged
   };
   extend( Force.prototype, prototype );
+
+  Force.ForceTypes = {
+    GLOBAL : 0
+  };
 
   return Force;
 });

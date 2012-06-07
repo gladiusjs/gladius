@@ -5162,6 +5162,10 @@ define('core/engine',['require','_math','common/multicast-delegate','core/reques
         for( j = 0, m = componentNames.length; j < m; ++ j ) {
           componentName = componentNames[j];
           ComponentConstructor = components[componentName].bind( null, service );
+          var componentProperties = Object.keys(components[componentName]);
+          for (i = 0, l = componentProperties.length; i < l; ++ i) {
+            ComponentConstructor[componentProperties[i]] = components[componentName][componentProperties[i]];
+          }
           extensionInstance[componentName] = ComponentConstructor;
         }
 
@@ -5170,11 +5174,15 @@ define('core/engine',['require','_math','common/multicast-delegate','core/reques
         for( j = 0, m = resourceNames.length; j < m; ++ j ) {
           resourceName = resourceNames[j];
           ResourceConstructor = resources[resourceName].bind( null, service );
+          var resourceProperties = Object.keys(resources[resourceName]);
+          for (i = 0, l = resourceProperties.length; i < l; ++ i) {
+            ComponentConstructor[resourceProperties[i]] = resources[resourceName][resourceProperties[i]];
+          }
           extensionInstance[resourceName] = ResourceConstructor;
         }
       }
     }
-    
+
     components = extension.components;
     componentNames = Object.keys( components );
     for( i = 0, l = componentNames.length; i < l; ++ i ) {
@@ -5190,11 +5198,24 @@ define('core/engine',['require','_math','common/multicast-delegate','core/reques
       ResourceConstructor = resources[resourceName];
       extensionInstance[resourceName] = ResourceConstructor;
     }
+
+    //Loop through extension, add any unrecognized properties to extensionInstance
+    var extensionProperties = Object.keys(extension);
+    for (i = 0, l = extensionProperties.length; i < l; ++ i) {
+      if (extensionProperties[i] != "resources"
+        && extensionProperties[i] != "services"
+        && extensionProperties[i] != "components"
+        && extensionProperties[i] != "name"){
+        extensionInstance[extensionProperties[i]] = extension[extensionProperties[i]];
+      }
+    }
     
     this._extensions[extension.name] = extensionInstance;
     if( !this.hasOwnProperty( name ) ) {
       this[extension.name] = extensionInstance;
     }
+
+    //
     
     return this;
   }
