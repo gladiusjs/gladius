@@ -2,21 +2,6 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
   var engine = new Gladius();
 
-  document.addEventListener( "keydown", function( event ) {
-    var code = event.which || event.keyCode;
-    if( code === 0x4D && event.ctrlKey && event.altKey ) {
-      if( engine.simulationClock.isStarted() ) {
-        engine.simulationClock.pause();
-        window.engine = engine;
-        console.log( "suspend" );
-      } else {
-        delete window.engine;
-        engine.simulationClock.start();
-        console.log( "resume" );
-      }
-    }
-  });
-
   var cubicvrOptions = {
     renderer: {
       canvas: document.getElementById( "test-canvas" )
@@ -44,6 +29,16 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         load: engine.loaders.procedural,
         onsuccess: function( material ) {
           resources.material = material;
+        },
+        onfailure: function( error ) {
+        }
+      },
+      {
+        type: engine["gladius-cubicvr"].MaterialDefinition,
+        url: '../assets/procedural-material.js?R=0&G=0&B=1',
+        load: engine.loaders.procedural,
+        onsuccess: function( material ) {
+          resources.altMaterial = material;
         },
         onfailure: function( error ) {
         }
@@ -112,6 +107,26 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       tags: ["@update"]
     });
     task.start();
+
+    function suspendHandler( event ) {
+      var code = event.which || event.keyCode;
+      if( code === 0x4D && event.ctrlKey && event.altKey ) {
+        if( engine.simulationClock.isStarted() ) {
+          engine.simulationClock.pause();
+          window.context = this;
+          console.log( "suspend" );
+        } else {
+          delete window.context;
+          engine.simulationClock.start();
+          console.log( "resume" );
+        }
+      }
+    }
+    document.addEventListener( "keydown", suspendHandler.bind({
+      engine: engine,
+      space: space,
+      resources: resources
+    }) );
 
     engine.resume();
   }
