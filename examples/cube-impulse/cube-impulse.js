@@ -88,7 +88,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
     space.add(new engine.simulation.Entity( "gravity",
       [
-        new box2d.Force({direction:[0,-1], magnitude:1, forceType:box2d.Force.ForceTypes.GLOBAL})
+        new box2d.Force({force:[0,-1], forceType:box2d.Force.ForceTypes.GLOBAL})
       ]
     ));
 

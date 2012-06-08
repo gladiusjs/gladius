@@ -90475,12 +90475,11 @@ define('src/services/resolver',['require','base/service','core/event','_math','b
     //Go through the list of registered components,
     // add up all the global forces into gravity,
     // and then set the gravity on the world
-    // Also make sure that we transform each force according to the transforms of whatever parent objects that transform has
-    // this would be a good unit test
+    // TODO: Make sure that we transform each force according to the transforms of whatever parent objects it has
     var totalForce = new math.Vector2();
     var entityId;
     for (entityId in registeredComponents["Force"]){
-      math.vector2.add(totalForce, registeredComponents["Force"][entityId].getForce(), totalForce);
+      math.vector2.add(totalForce, registeredComponents["Force"][entityId].force, totalForce);
     }
 
     var newGravity = new Box2D.b2Vec2(totalForce[0], totalForce[1]);
@@ -90743,16 +90742,10 @@ define('src/components/force',['require','box2d','common/extend','base/component
     options = options || {};
     var that = this;
 
-    if (options.direction){
-      this._direction = math.vector2.normalize(options.direction);
+    if (options.force){
+      this.force = options.force;
     }else{
-      this._direction = new math.Vector2();
-    }
-
-    if (options.magnitude){
-      this._magnitude = options.magnitude;
-    }else{
-      this._magnitude = 0;
+      this.force = new math.Vector2();
     }
 
     if (options.forceType){
@@ -90760,32 +90753,12 @@ define('src/components/force',['require','box2d','common/extend','base/component
     }else{
       this._forceType = 0;
     }
-
-    Object.defineProperty(this, 'active', {
-      get: function getActive() {
-        return this._active ? true : false;
-      },
-      set: function setActive( val ) {
-        this._active = val ? true : false;
-      }
-    });
-
-    //We could optionally cache the total resulting force vector
-    if (options.hasOwnProperty("active")){
-      this.active = options.isActive;
-    }else{
-      this.active = true;
-    }
   };
   Force.prototype = new Component();
   Force.prototype.constructor = Force;
 
   function getForce() {
-    if (this.active){
-      return math.vector2.multiply(this._direction, this._magnitude);
-    }else{
-      return new math.Vector2(0,0);
-    }
+    return this.force;
   }
 
   function onUpdate( event ) {
