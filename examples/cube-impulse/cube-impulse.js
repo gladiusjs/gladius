@@ -30,14 +30,8 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         }
       };
 
-      var box2dOptions = {
-        resolver: {
-          gravity: [0,-1]
-        }
-      };
-
       engine.registerExtension( cubicvrExtension, cubicvrOptions );
-      engine.registerExtension( box2dExtension, box2dOptions);
+      engine.registerExtension( box2dExtension );
 
       var resources = {};
 
@@ -89,6 +83,12 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         new cubicvr.Camera( {
           targeted:false
         } )
+      ]
+    ));
+
+    space.add(new engine.Entity( "gravity",
+      [
+        new box2d.Force({force:[0,-1], forceType:box2d.Force.ForceTypes.GLOBAL})
       ]
     ));
 
