@@ -1,12 +1,12 @@
 {
-  "states": {
+  "States": {
     "MoveForward": [ "W" ],
     "MoveBackward": [ "S" ],
     "TurnLeft": [ "A" ],
     "TurnRight": [ "D" ],
     "StrafeModifier": [ "SHIFT" ]
   },
-  "actions": {
+  "Actions": {
     "Fire": [ "SPACE" ]
   }
 }

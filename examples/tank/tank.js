@@ -94,7 +94,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
             }
           },
           {
-            type: input.InputMap,
+            type: input.Map,
             url: "tank-controls.json",
             onsuccess: function( inputMap ) {
               resources.tankControls = inputMap;
