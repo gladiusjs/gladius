@@ -112,10 +112,10 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
   function game( engine, resources ) {
     var math = engine.math;
-    var space = new engine.simulation.Space();
+    var space = new engine.SimulationSpace();
     var cubicvr = engine.findExtension( "gladius-cubicvr" );
     var input = engine.findExtension( "gladius-input" );
-    var Entity = engine.simulation.Entity;
+    var Entity = engine.Entity;
 
     var lightDefinition = new cubicvr.LightDefinition({
       intensity: 2,
