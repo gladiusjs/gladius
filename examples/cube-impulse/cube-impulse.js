@@ -5,9 +5,10 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
   });
   
   require( 
-    [ "gladius-core", 
-      "gladius-cubicvr" ],
-    function( Gladius, cubicvrExtension ) {
+    [ "gladius-core",
+      "gladius-cubicvr",
+      "gladius-box2d"],
+    function( Gladius, cubicvrExtension, box2dExtension ) {
 
       var engine = new Gladius();
 
@@ -28,7 +29,9 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           canvas: document.getElementById( "test-canvas" )
         }
       };
+
       engine.registerExtension( cubicvrExtension, cubicvrOptions );
+      engine.registerExtension( box2dExtension );
 
       var resources = {};
 
@@ -65,12 +68,13 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
   function game( engine, resources ) {
     var space = new engine.SimulationSpace();
     var cubicvr = engine.findExtension( "gladius-cubicvr" );
+    var box2d = engine.findExtension( "gladius-box2d" );
 
     var lightDefinition = new cubicvr.LightDefinition({
       intensity: 2,
       light_type: cubicvr.LightDefinition.LightTypes.POINT,
       method: cubicvr.LightDefinition.LightingMethods.DYNAMIC
-    })
+    });
 
     space.add( new engine.Entity( "camera",
       [
@@ -79,6 +83,12 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         new cubicvr.Camera( {
           targeted:false
         } )
+      ]
+    ));
+
+    space.add(new engine.Entity( "gravity",
+      [
+        new box2d.Force({force:[0,-1], forceType:box2d.Force.ForceTypes.GLOBAL})
       ]
     ));
 
@@ -95,22 +105,28 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         }
       }
     }
+
+    var bodyDefinition = new box2d.BodyDefinition();
+    var fixtureDefinition = new box2d.FixtureDefinition({shape:new box2d.BoxShape()});
+
     var parentCube = new engine.Entity( "cube",
       [
-        new engine.core.Transform( [0, 0, 6], [0, 0, 0] ),
+        new engine.core.Transform( [0, 0, -6], [0, 0, 0] ),
+        new box2d.Body({bodyDefinition: bodyDefinition, fixtureDefinition: fixtureDefinition}),
         new cubicvr.Model( resources.mesh, resources.material )
       ]
     );
     space.add( parentCube );
 
     var task = new engine.FunctionTask( function() {
-      var cubeRotation = new engine.math.Vector3( space.findNamed( "cube" ).findComponent( "Transform" ).rotation );
-      cubeRotation = engine.math.vector3.add( cubeRotation, [0, space.clock.delta * 0.0003, 0] );
-      space.findNamed( "cube" ).findComponent( "Transform" ).setRotation( cubeRotation );
+      var cubePosition = new engine.math.Vector3( space.findNamed( "cube").findComponent( "Transform").position);
+      if (cubePosition[1] < -1.5){
+        var impEvent = new engine.Event('LinearImpulse',{impulse: [0, 1]});
+        impEvent.dispatch(parentCube);
 
-      var cameraRotation = new engine.math.Vector3( space.findNamed( "camera" ).findComponent( "Transform" ).rotation );
-      cameraRotation = engine.math.vector3.add( cameraRotation, [0, space.clock.delta * 0.0003, 0] );
-      space.findNamed( "camera" ).findComponent( "Transform" ).setRotation( cameraRotation );
+        var angEvent = new engine.Event('AngularImpulse',{impulse: 0.1});
+        angEvent.dispatch(parentCube);
+      }
     }, {
       tags: ["@update"]
     });

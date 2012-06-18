@@ -2,18 +2,6 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
   var engine = new Gladius();
 
-  // Engine monitor setup
-  function monitor( engine ) {
-    debugger;
-    engine.detach( monitor );
-  }
-  document.addEventListener( "keydown", function( event ) {
-    var code = event.which || event.keyCode;
-    if( code === 0x4D && event.ctrlKey && event.altKey ) {
-      engine.attach( monitor );
-    }
-  });
-
   var cubicvrOptions = {
     renderer: {
       canvas: document.getElementById( "test-canvas" )
@@ -44,6 +32,16 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         },
         onfailure: function( error ) {
         }
+      },
+      {
+        type: engine["gladius-cubicvr"].MaterialDefinition,
+        url: '../assets/procedural-material.js?R=0&G=0&B=1',
+        load: engine.loaders.procedural,
+        onsuccess: function( material ) {
+          resources.altMaterial = material;
+        },
+        onfailure: function( error ) {
+        }
       }
     ],
     {
@@ -52,7 +50,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
   );
 
   function game( engine, resources ) {
-    var space = new engine.simulation.Space();
+    var space = new engine.SimulationSpace();
     var cubicvr = engine.findExtension( "gladius-cubicvr" );
 
     var lightDefinition = new cubicvr.LightDefinition({
@@ -61,7 +59,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       method: cubicvr.LightDefinition.LightingMethods.DYNAMIC
     })
 
-    space.add( new engine.simulation.Entity( "camera",
+    space.add( new engine.Entity( "camera",
       [
         new engine.core.Transform( [0, 0, 0] ),
         new cubicvr.Camera({
@@ -70,24 +68,24 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         new cubicvr.Light()
       ]
     ));
-    space.add( new engine.simulation.Entity( "light-center",
+    space.add( new engine.Entity( "light-center",
       [
         new engine.core.Transform( [0, 0, 5], [engine.math.TAU, engine.math.TAU, engine.math.TAU] )
       ]
     ));
-    space.add( new engine.simulation.Entity( "light-marker",
+    space.add( new engine.Entity( "light-marker",
       [
         new engine.core.Transform( [3, 0, 0], [0, 0, 0], [0.1, 0.1, 0.1] ),
         new cubicvr.Model( resources.mesh, resources.material )
       ]
     ));
-    space.add( new engine.simulation.Entity( "light-source",
+    space.add( new engine.Entity( "light-source",
       [
         new engine.core.Transform( [3, 0, 0], [0, 0, 0], [1, 1, 1] ),
         new cubicvr.Light( lightDefinition )
       ]
     ));
-    var parentCube = new engine.simulation.Entity( "cube",
+    var parentCube = new engine.Entity( "cube",
       [
         new engine.core.Transform( [0, 0, 6], [0, -engine.math.TAU/8, engine.math.TAU/8] ),
         new cubicvr.Model( resources.mesh, resources.material )
@@ -109,6 +107,26 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       tags: ["@update"]
     });
     task.start();
+
+    function suspendHandler( event ) {
+      var code = event.which || event.keyCode;
+      if( code === 0x4D && event.ctrlKey && event.altKey ) {
+        if( engine.simulationClock.isStarted() ) {
+          engine.simulationClock.pause();
+          window.context = this;
+          console.log( "suspend" );
+        } else {
+          delete window.context;
+          engine.simulationClock.start();
+          console.log( "resume" );
+        }
+      }
+    }
+    document.addEventListener( "keydown", suspendHandler.bind({
+      engine: engine,
+      space: space,
+      resources: resources
+    }) );
 
     engine.resume();
   }

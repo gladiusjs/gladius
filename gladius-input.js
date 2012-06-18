@@ -1440,9 +1440,80 @@ if ( typeof define !== "function" ) {
   var define = require( "amdefine" )( module );
 }
 
-define('src/services/keyboard/key-codes',['require'],function ( require ) {
+define('core/event',['require'],function( require ) {
 
-  var codes = [ 
+  function dispatch() {
+    var dispatchList = Array.prototype.slice.call( arguments, 0 );
+    var i, l;
+
+    if( dispatchList.length > 0 && Array.isArray( dispatchList[0] ) ) {
+      dispatchList = dispatchList[0];
+    } 
+    for( i = 0, l = dispatchList.length; i < l; ++ i ) {
+      try {
+        var handler = dispatchList[i];
+        if( handler.handleEvent ) {
+          handler.handleEvent.call( handler, this );
+        }
+      } catch( error ) {
+        console.log( error );
+      }
+    }
+  }
+
+  var Event = function( type, data, queue ) {
+    if( undefined === type || type.length < 1 ) {
+      throw new Error( "event must have a non-trivial type" );
+    }
+    this.type = type;
+    this.data = data;
+    if( undefined === queue ) {
+      queue = true;
+    }
+    this.queue = queue;
+    this.dispatch = dispatch.bind( this );
+  };
+
+  return Event;
+
+});
+if ( typeof define !== "function" ) {
+  var define = require( "amdefine" )( module );
+}
+
+define('src/services/DOMKeyMapper',['require'],function ( require ) {
+
+  function DOMKeyMapper(){
+    this.keys = []; // Keys by keyCode
+
+    this._keyCodes.forEach( function( arr ) {
+      var keyName = arr[0];
+      var keyCode = arr[1];
+
+      this.keys[keyCode] = keyName;
+    }.bind(this));
+  };
+
+  function getKeyName( code ) {
+    //TODO: Talk to ack about this borked commented-out code so that it does the correct key mapping as intended
+//    switch (code) {
+//      case 8:
+//        return 46; // delete on Mac
+//      case 61:
+//        return 109; // + on Mac
+//      case 91: // META L (Saf/Mac)
+//      case 93: // META R (Saf/Mac)
+//      case 224: // META (FF/Mac)
+//        return 157;
+//      case 57392: // CONTROL (Op/Mac)
+//        return 17;
+//      case 45: // INSERT
+//        return 155;
+//    }
+    return this.keys[code];
+  }
+
+  DOMKeyMapper.prototype._keyCodes = [
     ['BACK', 0x08],
     ['TAB', 0x09],
     ['CLEAR', 0x0C],
@@ -1457,7 +1528,7 @@ define('src/services/keyboard/key-codes',['require'],function ( require ) {
     ['JUNJA', 0x17],
     ['FINAL', 0x18],
     ['HANJA', 0x19],
-    ['KANJI', 0x19],
+    ['KANJI', 0x19],//TODO: Find out if this is a bug or not. Has same number as preceding keyCode
     ['ESCAPE', 0x1B],
     ['CONVERT', 0x1C],
     ['NONCONVERT', 0x1D],
@@ -1612,110 +1683,99 @@ define('src/services/keyboard/key-codes',['require'],function ( require ) {
     ['UNKNOWN', 0]
   ];
 
-  return codes;
-
+  DOMKeyMapper.prototype.getKeyName = getKeyName;
+  return DOMKeyMapper;
 });
+
 if ( typeof define !== "function" ) {
   var define = require( "amdefine" )( module );
 }
 
-define('src/services/keyboard/get-key-code',['require','src/services/keyboard/key-codes'],function ( require ) {
+define('src/services/dispatcher',['require','base/service','core/event','src/services/DOMKeyMapper'],function ( require ) {
 
-  var codes = require( "src/services/keyboard/key-codes" );
+  var Service = require( "base/service" );
+  var Event = require( "core/event" );
+  var DOMKeyMapper = require( "src/services/DOMKeyMapper" );
+  
+  var Dispatcher = function( scheduler, options ) {
+    options = options || {};
 
-  var names = {}; // Keys by keyName
+    var schedules = {
+      "dispatch": {
+        tags: ["@input"],
+        dependsOn: []
+      }
+    };
+    Service.call( this, scheduler, schedules );
 
-  codes.forEach( function( arr ) {
-    var keyName = arr[0];
-    var keyCode = arr[1];
-
-    names[keyName] = keyCode;
-  });
-
-  function getKeyCode( name ) {
-    return names[name];
-  }
-
-  return getKeyCode;
-
-});
-if ( typeof define !== "function" ) {
-  var define = require( "amdefine" )( module );
-}
-
-define('src/services/keyboard/get-key-name',['require','src/services/keyboard/key-codes'],function ( require ) {
-
-  var codes = require( "src/services/keyboard/key-codes" );
-
-  var keys = [];  // Keys by keyCode
-
-  codes.forEach( function( arr ) {
-    var keyName = arr[0];
-    var keyCode = arr[1];
-
-    keys[keyCode] = keyName;
-  });
-
-  function getKeyName( code ) {
-    switch (code) {
-    case 8:
-      return 46; // delete on Mac
-    case 61:
-      return 109; // + on Mac
-    case 91: // META L (Saf/Mac)
-    case 93: // META R (Saf/Mac)
-    case 224: // META (FF/Mac)
-      return 157;
-    case 57392: // CONTROL (Op/Mac)
-      return 17;
-    case 45: // INSERT
-      return 155;
+    if ( 'element' in options ) {
+      this.element = options.element;
+    } else {
+      this.element = document;
     }
-    return keys[code];
-  }
 
-  return getKeyName;
+    this.DOMKeyMapper = new DOMKeyMapper();
 
-});
-if ( typeof define !== "function" ) {
-  var define = require( "amdefine" )( module );
-}
+    this._queue = [];
 
-define('core/event',['require'],function( require ) {
+    var self = this;
+    function dispatcherKeyHandler(event) {
+      self._queue.push(event);
+    }
 
-  function dispatch() {
-    var dispatchList = Array.prototype.slice.call( arguments, 0 );
+    this.element.addEventListener("keydown", dispatcherKeyHandler, false);
+    this.element.addEventListener("keyup", dispatcherKeyHandler, false);
+
+  };
+
+  function dispatch(){
+
+    var controllers = this._registeredComponents["Controller"];
+    var controllerIds = Object.keys( controllers );
+    var currentId, domEvent, keyCodeString, domCode, gladiusEvent;
     var i, l;
+    for (i = 0, l = this._queue.length; i < l; ++ i){
+      // get the event code from the DOM
+      domEvent = this._queue[i];
+      domCode = domEvent.which ? domEvent.which : domEvent.keyCode;
 
-    if( dispatchList.length > 0 && Array.isArray( dispatchList[0] ) ) {
-      dispatchList = dispatchList[0];
-    } 
-    for( i = 0, l = dispatchList.length; i < l; ++ i ) {
-      try {
-        var handler = dispatchList[i];
-        if( handler.handleEvent ) {
-          handler.handleEvent.call( handler, this );
-        }
-      } catch( error ) {
-        console.log( error );
+      // translate it into keyCode string
+      keyCodeString = this.DOMKeyMapper.getKeyName(domCode);
+
+      // create Event from DOM event
+      if (domEvent.type === "keydown"){
+        gladiusEvent = new Event("KeyDown", keyCodeString);
+      }else if (domEvent.type === "keyup"){
+        gladiusEvent = new Event("KeyUp", keyCodeString);
+      }else{
+        throw new Error("A DOM event type was encountered which was not keydown or keyup in dispatcher");
+      }
+
+      // dispatch each event to every controller we have that will handle it
+
+      for (currentId in controllerIds){
+        gladiusEvent.dispatch(controllers[controllerIds[currentId]]);
+      }
+    }
+    this._queue = [];
+
+    var component, entityId;
+    var registeredComponents = this._registeredComponents;
+
+    var updateEvent = new Event( 'Update', undefined, false);
+    for( var componentType in registeredComponents ) {
+      for( entityId in registeredComponents[componentType] ) {
+        component = registeredComponents[componentType][entityId];
+        while( component.handleQueuedEvent() ) {}
+        updateEvent.dispatch( component );
       }
     }
   }
 
-  var Event = function( type, data, queue ) {
-    if( undefined === type || type.length < 1 ) {
-      throw new Error( "event must have a non-trivial type" );
-    }
-    this.type = type;
-    this.data = data;
-    if( undefined === queue ) {
-      queue = true;
-    }
-    this.queue = queue;
-    this.dispatch = dispatch.bind( this );
-  };
-
-  return Event;
+  Dispatcher.prototype = new Service();
+  Dispatcher.prototype.constructor = Dispatcher;
+  Dispatcher.prototype.dispatch = dispatch;
+  return Dispatcher;
 
 });
 if ( typeof define !== "function" ) {
@@ -1738,108 +1798,6 @@ define('common/extend',['require'],function ( require ) {
 
 });
 
-if ( typeof define !== "function" ) {
-  var define = require( "amdefine" )( module );
-}
-
-define('src/services/dispatcher',['require','base/service','src/services/keyboard/key-codes','src/services/keyboard/get-key-code','src/services/keyboard/get-key-name','core/event','common/extend'],function ( require ) {
-
-  var Service = require( "base/service" );
-  var codes = require( "src/services/keyboard/key-codes" );
-  var getKeyCode = require( "src/services/keyboard/get-key-code" );
-  var getKeyName = require( "src/services/keyboard/get-key-name" );
-  var Event = require( "core/event" );
-
-  var extend = require( "common/extend" );
-
-  function handleKey( state, event ) {
-    var key = getKeyName( event.which || event.keyCode );
-    if( "UNKNOWN" === key ) {
-      // We don't know about this key, so just ignore it for now
-      console.log( "unknown key" );
-      return;
-    }
-
-    this.keyboard[key] = state;
-
-    var eventName = state ? "KeyDown" : "KeyUp";
-    this.queue.push( new Event( eventName, key ) );
-  }
-
-  function dispatch() {
-    var registeredComponents = this._registeredComponents;
-    var component, componentType, entityId;
-
-    // Dispatch input events to all controllers
-    var controllerComponents = [];
-    if( registeredComponents.hasOwnProperty( "Controller" ) ) {
-      for( entityId in registeredComponents["Controller"] ) {
-        controllerComponents.push( registeredComponents["Controller"][entityId] );
-      }
-      while( this.queue.length ) {
-        this.queue.shift().dispatch.call( this, controllerComponents );
-      }
-    }
-
-    // Update all input components
-    var updateEvent = new Event( 'Update', false );
-    for( componentType in registeredComponents ) {
-      for( entityId in registeredComponents[componentType] ) {
-        component = registeredComponents[componentType][entityId]; 
-        while( component.handleQueuedEvent() ) {}
-        updateEvent.dispatch( component );
-      }
-    }
-  }
-
-  var Keyboard = function() {
-    var that = this;
-    codes.forEach( function( arr ) {
-      var keyName = arr[0];
-      that[keyName] = false;
-    });
-  };
-
-  var Dispatcher = function( scheduler, options ) {
-    options = options || {};
-
-    var schedules = {
-      "dispatch": {
-        tags: ["@input", "input"],
-        dependsOn: []
-      }
-    };
-    Service.call( this, scheduler, schedules );
-    var that = this;
-
-    this.queue = []; // Queue for input events that we haven't dispatched yet
-
-    this.inputDefaults = {};
-    // Add default values for keyboard inputs
-    codes.forEach( function( arr ) {
-      var keyName = arr[0];
-      that.inputDefaults[keyName] = false;
-    });
-
-    // Stores the current keyboard state
-    this.keyboard = new Keyboard();
-
-    this.element = options.element;
-    this.element.addEventListener( "keydown", handleKey.bind( this, true ), false );
-    this.element.addEventListener( "keyup", handleKey.bind( this, false ), false );
-  };
-
-  Dispatcher.prototype = new Service();
-  Dispatcher.prototype.constructor = Dispatcher;
-
-  var prototype = {
-    dispatch: dispatch
-  };
-  extend( Dispatcher.prototype, prototype );
-
-  return Dispatcher;
-
-});
 if ( typeof define !== "function" ) {
   var define = require( "amdefine" )( module );
 }
@@ -1917,112 +1875,177 @@ if ( typeof define !== "function" ) {
   var define = require( "amdefine" )( module );
 }
 
-define('src/components/controller',['require','common/extend','base/component','core/event'],function( require ) {
+define('src/resources/map',['require'],function ( require ) {
+  var Map = function( map ) {
+    map = map || {};
+    if (typeof map === "string"){
+      map = JSON.parse( map );
+    }
+    this.States = (undefined !== map.States ) ? map.States : {};
+    this.Actions = (undefined !== map.Actions ) ? map.Actions : {};
+    this._validate();
+  };
+  Map.prototype = {
+    _validate: function _mapValidate() {
 
-  var extend = require( "common/extend" );
-  var Component = require( "base/component" );
-  var Event = require( "core/event" );
-
-  var Controller = function( service, inputMap ) {
-    Component.call( this, "Controller", service );
-
-    this._inputMap = inputMap || {};
-    this._inputStates = {};
-    this._updateRequired = false;
-    this.states = {};
-
-    // Populate input states from the input map
-    var i, l;
-    var inputs;
-    var that = this;
-    var types = [ "actions", "states" ];
-    for( var t = 0; t < types.length; ++ t ) {
-      var type = types[t];
-      if( this._inputMap.hasOwnProperty( type ) ) {
-        this._inputStates[type] = {};
-        var names = Object.keys( this._inputMap[type] );
-        for( i = 0, l = names.length; i < l; ++ i ) {
-          var name = names[i];
-          inputs = this._inputMap[type][name];
-          inputs.forEach( function( input ) {
-            that._inputStates[type][input] = service.inputDefaults[input];
-          });
-          if( "states" === type ) {
-            this.states[name] = false;
+      //This could probably have its length cut in half by making a function that gets called from in here.
+      this._validateSubmap(this.Actions, "action");
+      this._validateSubmap(this.States, "state");
+    },
+    _validateSubmap: function _validateSubmap(submap, submapName){
+      var submapLength, submapIndex;
+      var submapKeys = Object.keys(submap);
+      for ( submapIndex = 0, submapLength = submapKeys.length; submapIndex < submapLength; ++ submapIndex ) {
+        if (!(typeof submap[submapKeys[submapIndex]] == "string")){
+          if ( !Array.isArray(submap[submapKeys[submapIndex]])) {
+            throw new Error("map contains " + submapName + " " + submapKeys[submapIndex] +
+              " that is not a string or array");
+          } else {
+            var i, l;
+            var submapArray = submap[submapKeys[submapIndex]];
+            if (submapArray.length === 0){
+              throw new Error("map contains a(n) " + submapName + " array called " + submapKeys[submapIndex] + " of length 0");
+            }
+            for (i = 0, l = submapArray.length; i < l; ++ i){
+              if (typeof submapArray[i] !== "string"){
+                throw new Error("map contains " + submapName + " " + submapArray[i] +
+                  " in a(n) " + submapName + " array. That " + submapName + " is not a string and the map is invalid as a result");
+              }
+            }
           }
         }
+      }
+    }
+  }
+  
+  return Map;
+});
+if ( typeof define !== "function" ) {
+  var define = require( "amdefine" )( module );
+}
+
+define('src/components/controller',['require','common/extend','base/component','src/resources/map','core/event'],function ( require ) {
+  var extend = require( "common/extend" );
+  var Component = require( "base/component" );
+  var Map = require("src/resources/map");
+  var Event = require( "core/event" );
+
+  var Controller = function(service, map){
+    Component.call( this, "Controller", service, [] );
+    var that = this;
+    var stateIndex, stateLength, keyIndex, keyLength;
+    var actionIndex, actionLength;
+
+    this.map = (undefined !== map ) ? map: new Map();
+    this.states = {};
+    this._stateMapping = {};
+    //The following code segment reverses the mapping of states to keys that is
+    // in map into a mapping of keys to states. This is useful in keyDown and
+    // keyUp when we want to find out what keys correspond to what states.
+    var states = Object.keys(this.map.States);
+    for (stateIndex = 0, stateLength = states.length; stateIndex < stateLength; ++ stateIndex){
+      var keys = this.map.States[states[stateIndex]];
+      //The current state will have either one key or an array of keys mapped to it
+      if (Array.isArray(keys)){
+        for ( keyIndex = 0, keyLength = keys.length; keyIndex < keyLength; ++ keyIndex){
+          this._mapKey(this._stateMapping, keys[keyIndex], states[stateIndex]);
+        }
+      }else{
+        this._mapKey(this._stateMapping, keys, states[stateIndex]);
+      }
+      this.states[states[stateIndex]] = false;
+    }
+
+    this._actionMapping = {};
+    //See above comments but for actions
+    var actions = Object.keys(this.map.Actions);
+    for (actionIndex = 0, actionLength = actions.length; actionIndex < actionLength; ++ actionIndex){
+      var keys = this.map.Actions[actions[actionIndex]];
+      if (Array.isArray(keys)){
+        for ( keyIndex = 0, keyLength = keys.length; keyIndex < keyLength; ++ keyIndex){
+          this._mapKey(this._actionMapping, keys[keyIndex], actions[actionIndex]);
+        }
+      }else{
+        this._mapKey(this._actionMapping, keys, actions[actionIndex]);
       }
     }
   };
+
   Controller.prototype = new Component();
   Controller.prototype.constructor = Controller;
 
-  function checkInputs( inputList ) {
-    var i, l;
-    for( i = 0, l = inputList.length; i < l; ++ i ) {
-      if( !this._inputStates[inputList[i]] ) {
-        return false;
-      }
+  //toMap is either a state or an action, depending on if this method was given
+  // this._actionMapping or this._stateMapping
+  function _mapKey(keyMapping, keyName, toMap){
+    var currentMapping = keyMapping[keyName];
+    //if no states are mapped to this key yet then map the toMap to the key
+    if (undefined === currentMapping){
+      keyMapping[keyName] = toMap;
+    //otherwise if there is a toMap mapped then turn the mapping into an array
+    // including the already mapped toMap and the new toMap
+    }else if (typeof currentMapping === "string"){
+      keyMapping[keyName] = [currentMapping, toMap];
+    //otherwise we have multiple states mapped already, just add another one onto the array
+    }else{
+      keyMapping[keyName][currentMapping.length] = toMap;
     }
-    return true;
   }
 
   function onUpdate( event ) {
-    var that = this;
-    var i, l;
-    var inputs;
-    if( this._updateRequired ) {
-      if( this._inputMap.hasOwnProperty( "actions" ) ) {
-        var actionNames = Object.keys( this._inputMap["actions"] );
-        for( i = 0, l = actionNames.length; i < l; ++ i ) {
-          var actionName = actionNames[i];
-          inputs = this._inputMap["actions"][actionName];
-          if( checkInputs.call( this, inputs ) ) {
-            var actionEvent = new Event( actionName );
-            actionEvent.dispatch( this.owner );
-          }
-        }
-      }
-      if( this._inputMap.hasOwnProperty( "states" ) ) {
-        var stateNames = Object.keys( this._inputMap["states"] );
-        for( i = 0, l = stateNames.length; i < l; ++ i ) {
-          var stateName = stateNames[i];
-          inputs = this._inputMap["states"][stateName];
-          if( checkInputs.call( this, inputs ) ) {
-            this.states[stateName] = true;
-            var stateEvent = new Event( stateName );
-            stateEvent.dispatch( this.owner );
-          } else {
-            this.states[stateName] = false;
-          }
-        }
-      }
-      this._updateRequired = false;
-    }
-  }
 
-  function hasInput( input ) {
-    if( (this._inputStates.hasOwnProperty( "actions" ) && 
-         this._inputStates["actions"].hasOwnProperty( input )) ||
-        (this._inputStates.hasOwnProperty( "states" ) && 
-         this._inputStates["states"].hasOwnProperty( input )) ) {
-      return true;
-    } else {
-      return false;
-    }
   }
 
   function onKeyDown( event ) {
-    if( hasInput.call( this, event.data ) ) {
-      this._inputStates[event.data] = true;
-      this._updateRequired = true;
+    var key = event.data;
+    if (undefined !== this._stateMapping[key]){
+      if (Array.isArray(this._stateMapping[key])){
+        var i, l;
+        for (i = 0, l = this._stateMapping[key].length; i < l; ++ i){
+          this.states[this._stateMapping[key][i]] = true;
+        }
+        if (this.owner){
+          for (i = 0, l = this._stateMapping[key].length; i < l; ++ i){
+            this.owner.handleEvent(new Event(this._stateMapping[key][i], true));
+          }
+        }
+      }else{
+        this.states[this._stateMapping[key]] = true;
+        if (this.owner){
+          this.owner.handleEvent(new Event(this._stateMapping[key], true));
+        }
+      }
+    }
+    if (undefined !== this._actionMapping[key]){
+      if (Array.isArray(this._actionMapping[key])){
+        for (var i = 0, l = this._actionMapping[key].length; i < l; ++ i){
+          this.owner.handleEvent(new Event(this._actionMapping[key][i]));
+        }
+      }
+      else if (this.owner){
+        this.owner.handleEvent(new Event(this._actionMapping[key]));
+      }
     }
   }
 
-  function onKeyUp( event ) {
-    if( hasInput.call( this, event.data ) ) {
-      this._inputStates[event.data] = false;
-      this._updateRequired = true;
+  function onKeyUp ( event ) {
+    var key = event.data;
+    if (undefined !== this._stateMapping[key]){
+      if (Array.isArray(this._stateMapping[key])){
+        var i, l;
+        for (i = 0, l = this._stateMapping[key].length; i < l; ++ i){
+          this.states[this._stateMapping[key][i]] = false;
+        }
+        if (this.owner){
+          for (i = 0, l = this._stateMapping[key].length; i < l; ++ i){
+            this.owner.handleEvent(new Event(this._stateMapping[key][i], false));
+          }
+        }
+      }else{
+        this.states[this._stateMapping[key]] = false;
+        if (this.owner){
+          this.owner.handleEvent(new Event(this._stateMapping[key], false));
+        }
+      }
     }
   }
 
@@ -2058,9 +2081,10 @@ define('src/components/controller',['require','common/extend','base/component','
   }
 
   var prototype = {
-    onUpdate: onUpdate,
+    _mapKey: _mapKey,
     onKeyDown: onKeyDown,
     onKeyUp: onKeyUp,
+    onUpdate: onUpdate,
     onEntitySpaceChanged: onEntitySpaceChanged,
     onComponentOwnerChanged: onComponentOwnerChanged,
     onEntityActivationChanged: onEntityActivationChanged
@@ -2068,28 +2092,12 @@ define('src/components/controller',['require','common/extend','base/component','
   extend( Controller.prototype, prototype );
 
   return Controller;
-
 });
 if ( typeof define !== "function" ) {
   var define = require( "amdefine" )( module );
 }
 
-define('src/resources/input-map',['require'],function ( require ) {
-
-  var InputMap = function( data ) {
-    var map = JSON.parse( data );
-    map._gladius = {};
-    return map;
-  };
-
-  return InputMap;
-
-});
-if ( typeof define !== "function" ) {
-  var define = require( "amdefine" )( module );
-}
-
-define('../src/gladius-input',['require','base/extension','src/services/dispatcher','src/components/controller','src/resources/input-map'],function ( require ) {
+define('../src/gladius-input',['require','base/extension','src/services/dispatcher','src/components/controller','src/resources/map'],function ( require ) {
 
   var Extension = require( "base/extension" );
 
@@ -2110,7 +2118,7 @@ define('../src/gladius-input',['require','base/extension','src/services/dispatch
       },
       
       resources: {
-        InputMap: require( "src/resources/input-map" )
+        Map: require( "src/resources/map" )
       }
       
   });

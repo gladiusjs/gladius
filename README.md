@@ -7,6 +7,7 @@ Gladius
 * [Twitter](https://twitter.com/#!/gladiusjs)
 * [Contributors](https://github.com/gladiusjs/gladius-core/contributors)
 * [Blog](http://blog.ottodestrukt.org) -- I usually blog about Gladius here
+* [Docs](http://gladius.readthedocs.org/en/latest/index.html)
 
 # Gladius is a 3D game engine
 
