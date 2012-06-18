@@ -5,8 +5,6 @@ PATH = PATH.join( ':' );
 
 process.env["PATH"] = PATH;
 
-var jake = require( "jake" );
-
 task( "default", [], require( "./tools/jake-tasks/default" ) );
 
 desc( "start web server in project directory" );
