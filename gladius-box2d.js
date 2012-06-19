@@ -90406,7 +90406,7 @@ define('src/services/resolver',['require','base/service','core/event','_math','b
     Service.call( this, scheduler, schedules );
 
     options.gravity = options.gravity || [0, 0];
-    this.gravity = new Box2D.b2Vec2( options.gravity[0], options.gravity[1] );
+    this.gravity = new Box2D.b2Vec2();
     this.world = new Box2D.b2World( this.gravity );
     this._timeStep = 30;  // time step, in milliseconds
     this._timeRemaining = 0;    // time remaining from last frame, in milliseconds
@@ -90482,9 +90482,9 @@ define('src/services/resolver',['require','base/service','core/event','_math','b
       math.vector2.add(totalForce, registeredComponents["Force"][entityId].force, totalForce);
     }
 
-    var newGravity = new Box2D.b2Vec2(totalForce[0], totalForce[1]);
+    this.gravity.Set(totalForce[0], totalForce[1]);
 
-    this.world.SetGravity(newGravity);
+    this.world.SetGravity(this.gravity);
     // Update all physics components
     var updateEvent = new Event( 'Update', undefined, false );
     for( var componentType in registeredComponents ) {
