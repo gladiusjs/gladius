@@ -78,11 +78,17 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
     space.add( new engine.Entity( "camera",
       [
-        new engine.core.Transform( [0, 0, 0] ),
-        new cubicvr.Light( lightDefinition ),
+        new engine.core.Transform( [0, 0, 5] ),
         new cubicvr.Camera( {
           targeted:false
         } )
+      ]
+    ));
+
+    space.add( new engine.Entity( "light",
+      [
+        new engine.core.Transform( [0, 0, -1] ),
+        new cubicvr.Light( lightDefinition )
       ]
     ));
 
@@ -105,12 +111,33 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     space.add( parentCube );
 
     var task = new engine.FunctionTask( function() {
+      function getRandom(min, max)
+      {
+        return Math.random() * (max - min) + min;
+      }
       var cubePosition = new engine.math.Vector3( space.findNamed( "cube").findComponent( "Transform").position);
+//      var camera = space.findNamed("camera").findComponent("Camera");
+//      camera.setTarget(cubePosition);
       if (cubePosition[1] < -1.5){
-        var impEvent = new engine.Event('LinearImpulse',{impulse: [0, 1]});
+        var impEvent = new engine.Event('LinearImpulse',{impulse: [getRandom(0,0.1), getRandom(0,1)]});
+        impEvent.dispatch(parentCube);
+      }
+      if (cubePosition[1] > 1.5){
+        var impEvent = new engine.Event('LinearImpulse',{impulse: [getRandom(0,0.1) * -1, getRandom(0, 1) * -1]});
+        impEvent.dispatch(parentCube);
+      }
+      if (cubePosition[0] < -1.5){
+        var impEvent = new engine.Event('LinearImpulse',{impulse: [getRandom(0,1), 0]});
         impEvent.dispatch(parentCube);
 
-        var angEvent = new engine.Event('AngularImpulse',{impulse: 0.1});
+        var angEvent = new engine.Event('AngularImpulse',{impulse: getRandom(0, 0.1)});
+        angEvent.dispatch(parentCube);
+      }
+      if (cubePosition[0] > 1.5){
+        var impEvent = new engine.Event('LinearImpulse',{impulse: [getRandom(0, 1) * -1, 0]});
+        impEvent.dispatch(parentCube);
+
+        var angEvent = new engine.Event('AngularImpulse',{impulse: getRandom(0, 0.1) * -1});
         angEvent.dispatch(parentCube);
       }
     }, {
