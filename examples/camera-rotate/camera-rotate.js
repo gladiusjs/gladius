@@ -83,15 +83,18 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     ));
 
     var xCoord, yCoord, zCoord;
-    for (xCoord = -11; xCoord < 11; xCoord = xCoord + 2){
-      for (yCoord = -11; yCoord < 11; yCoord = yCoord + 2){
-        for (zCoord = -11; zCoord < 11; zCoord = zCoord + 2){
-          space.add(new engine.Entity("cubex:" + xCoord + "y:" + yCoord + "z:" + zCoord,
-            [
-              new engine.core.Transform( [xCoord, yCoord, zCoord], [0, 0, 0], [ 0.1, 0.1, 0.1 ] ),
-              new cubicvr.Model( resources.mesh, resources.material )
-            ]
-          ));
+    for (xCoord = -2; xCoord <= 2; xCoord = xCoord + 1){
+      for (yCoord = -0.5; yCoord <= 0.5; yCoord = yCoord + 0.5){
+        for (zCoord = -2; zCoord <= 2; zCoord = zCoord + 1){
+          //Get rid of some annoying corner cubes that appear really close to the camera
+          if (!(yCoord === 0 && (xCoord === 1 || xCoord === -1) && (zCoord === 1 || zCoord === -1))){
+            space.add(new engine.Entity("cubex:" + xCoord + "y:" + yCoord + "z:" + zCoord,
+              [
+                new engine.core.Transform( [xCoord, yCoord, zCoord], [0, 0, 0], [ 0.1, 0.1, 0.1 ] ),
+                new cubicvr.Model( resources.mesh, resources.material )
+              ]
+            ));
+          }
         }
       }
     }
