@@ -183,7 +183,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     // tank, and handle game logic events
     space.add( new Entity( "tank", 
       [
-        new engine.core.Transform( [0, 0, 5], [0, 0, math.TAU/4], [0.5, 0.5, 0.5] ),
+        new engine.core.Transform( [0, 0, 5], [math.TAU/6, 0, 0], [0.5, 0.5, 0.5] ),
         new input.Controller( resources.tankControls ),
         new engine.logic.Actor( tankLogic )
       ],
