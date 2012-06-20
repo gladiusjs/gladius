@@ -1,11 +1,14 @@
 function proc( options ) {
   options = options || {};
 
-  var R = (options.hasOwnProperty( "R" )) ? parseInt( options.R ) : 1.0;
-  var G = (options.hasOwnProperty( "G" )) ? parseInt( options.G ) : 0.2;
-  var B = (options.hasOwnProperty( "B" )) ? parseInt( options.B ) : 0.0;
+  var specR = (options.hasOwnProperty( "specR" )) ? parseFloat( options.specR ) : 1.0;
+  var specG = (options.hasOwnProperty( "specG" )) ? parseFloat( options.specG ) : 1.0;
+  var specB = (options.hasOwnProperty( "specB" )) ? parseFloat( options.specB ) : 1.0;
 
   return {
-    color: [R, G, B]
+    textures: {
+      color: '../assets/images/concrete3.jpg'
+    },
+    diffuse:[specR,specG,specB]
   };
 }

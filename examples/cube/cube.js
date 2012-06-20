@@ -35,7 +35,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       },
       {
         type: engine["gladius-cubicvr"].MaterialDefinition,
-        url: '../assets/procedural-material.js?R=0&G=0&B=1',
+        url: '../assets/procedural-material.js?specR=0&specG=0&specB=1',
         load: engine.loaders.procedural,
         onsuccess: function( material ) {
           resources.altMaterial = material;
@@ -54,7 +54,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     var cubicvr = engine.findExtension( "gladius-cubicvr" );
 
     var lightDefinition = new cubicvr.LightDefinition({
-      intensity: 2,
+      intensity: 1,
       light_type: cubicvr.LightDefinition.LightTypes.POINT,
       method: cubicvr.LightDefinition.LightingMethods.DYNAMIC
     })

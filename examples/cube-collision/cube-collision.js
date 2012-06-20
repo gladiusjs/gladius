@@ -55,7 +55,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: engine["gladius-cubicvr"].MaterialDefinition,
-            url: '../assets/procedural-material.js',
+            url: '../assets/procedural-material.js?specR=0.7&specG=0.7&specB=0.7',
             load: engine.loaders.procedural,
             onsuccess: function( material ) {
               resources.material = material;
@@ -65,20 +65,20 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: engine["gladius-cubicvr"].MaterialDefinition,
-            url: '../assets/procedural-material.js?R=0&G=0&B=1',
+            url: '../assets/procedural-material.js?specR=0.1&specG=0.1&specB=0.1',
             load: engine.loaders.procedural,
             onsuccess: function( material ) {
-              resources.materialBlue = material;
+              resources.materialDull = material;
             },
             onfailure: function( error ) {
             }
           },
           {
             type: engine["gladius-cubicvr"].MaterialDefinition,
-            url: '../assets/procedural-material.js?R=0&G=1&B=0',
+            url: '../assets/procedural-material.js?specR=1&specG=1&specB=1',
             load: engine.loaders.procedural,
             onsuccess: function( material ) {
-              resources.materialGreen = material;
+              resources.materialShiny = material;
             },
             onfailure: function( error ) {
             }
@@ -97,7 +97,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     var box2d = engine.findExtension( "gladius-box2d" );
 
     var lightDefinition = new cubicvr.LightDefinition({
-      intensity: 2,
+      intensity: 1,
       light_type: cubicvr.LightDefinition.LightTypes.POINT,
       method: cubicvr.LightDefinition.LightingMethods.DYNAMIC
     });
@@ -121,7 +121,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
       firstBody.onContactBegin = function(event){
         console.log("First cube number " + cubeIndex + " contact begin");
-        this.owner.findComponent( "Model").setMaterialDefinition(resources.materialBlue);
+        this.owner.findComponent( "Model").setMaterialDefinition(resources.materialDull);
       };
       firstBody.onContactEnd = function(event){
         console.log("First cube number " + cubeIndex + " contact end");
@@ -139,7 +139,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
       secondBody.onContactBegin = function(event){
         console.log("Second cube number " + cubeIndex + " contact begin");
-        this.owner.findComponent( "Model").setMaterialDefinition(resources.materialGreen);
+        this.owner.findComponent( "Model").setMaterialDefinition(resources.materialShiny);
       };
       secondBody.onContactEnd = function(event){
         console.log("Second cube number " + cubeIndex + " contact end");
