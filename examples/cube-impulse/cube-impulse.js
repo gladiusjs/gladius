@@ -35,6 +35,10 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
       var resources = {};
 
+      var materialArgs = '?colorTexture=../assets/images/6583-diffuse.jpg' +
+        '&bumpTexture=../assets/images/6583-bump.jpg' +
+        '&normalTexture=../assets/images/6583-normal.jpg';
+
       engine.get(
         [
           {
@@ -49,7 +53,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: engine["gladius-cubicvr"].MaterialDefinition,
-            url: '../assets/procedural-material.js',
+            url: '../assets/procedural-material.js' + materialArgs,
             load: engine.loaders.procedural,
             onsuccess: function( material ) {
               resources.material = material;
@@ -71,7 +75,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     var box2d = engine.findExtension( "gladius-box2d" );
 
     var lightDefinition = new cubicvr.LightDefinition({
-      intensity: 2,
+      intensity: 1,
       light_type: cubicvr.LightDefinition.LightTypes.POINT,
       method: cubicvr.LightDefinition.LightingMethods.DYNAMIC
     });
@@ -137,7 +141,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         var impEvent = new engine.Event('LinearImpulse',{impulse: [getRandom(0, 1) * -1, 0]});
         impEvent.dispatch(parentCube);
 
-        var angEvent = new engine.Event('AngularImpulse',{impulse: getRandom(0, 0.1) * -1});
+        var angEvent = new engine.Event('AngularImpulse',{impulse: getRandom(0, 0.1)});
         angEvent.dispatch(parentCube);
       }
     }, {

@@ -1,14 +1,21 @@
 function proc( options ) {
   options = options || {};
 
-  var specR = (options.hasOwnProperty( "specR" )) ? parseFloat( options.specR ) : 1.0;
-  var specG = (options.hasOwnProperty( "specG" )) ? parseFloat( options.specG ) : 1.0;
-  var specB = (options.hasOwnProperty( "specB" )) ? parseFloat( options.specB ) : 1.0;
+  var diffuseR = (options.hasOwnProperty( "diffuseR" )) ? parseFloat( options.diffuseR ) : 1.0;
+  var diffuseG = (options.hasOwnProperty( "diffuseG" )) ? parseFloat( options.diffuseG ) : 1.0;
+  var diffuseB = (options.hasOwnProperty( "diffuseB" )) ? parseFloat( options.diffuseB ) : 1.0;
+  var colorTexture = (options.hasOwnProperty( "colorTexture" )) ? options.colorTexture : '../assets/images/2576-diffuse.jpg';
+  var normalTexture = (options.hasOwnProperty( "normalTexture" )) ? options.normalTexture : '../assets/images/2576-normal.jpg';
+  var bumpTexture = (options.hasOwnProperty( "bumpTexture" )) ? options.bumpTexture : '../assets/images/2576-bump.jpg';
+  var envSphereTexture = (options.hasOwnProperty( "envSphereTexture" )) ? options.envSphereTexture : '../assets/images/fract_reflections.jpg';
 
   return {
     textures: {
-      color: '../assets/images/concrete3.jpg'
+      color: colorTexture,
+      normal: normalTexture,
+      bump: bumpTexture,
+      envsphere: envSphereTexture
     },
-    diffuse:[specR,specG,specB]
+    diffuse:[diffuseR,diffuseG,diffuseB]
   };
 }

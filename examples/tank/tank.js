@@ -41,6 +41,10 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       var input = engine.findExtension( "gladius-input" );
       var resources = {};
 
+      var materialArgs = '?colorTexture=../assets/images/2576-diffuse.jpg' +
+        '&bumpTexture=../assets/images/2576-bump.jpg' +
+        '&normalTexture=../assets/images/2576-normal.jpg';
+
       engine.get(
         [
           {
@@ -85,7 +89,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },          
           {
             type: cubicvr.MaterialDefinition,
-            url: "../assets/procedural-material.js",
+            url: "../assets/procedural-material.js" + materialArgs,
             load: engine.loaders.procedural,
             onsuccess: function( material ) {
               resources.material = material;

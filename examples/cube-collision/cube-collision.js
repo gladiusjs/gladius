@@ -41,6 +41,10 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
       var resources = {};
 
+      var materialArgs = '&colorTexture=../assets/images/2282-diffuse.jpg' +
+        '&bumpTexture=../assets/images/2282-bump.jpg' +
+        '&normalTexture=../assets/images/2282-normal.jpg';
+
       engine.get(
         [
           {
@@ -55,7 +59,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: engine["gladius-cubicvr"].MaterialDefinition,
-            url: '../assets/procedural-material.js?specR=0.7&specG=0.7&specB=0.7',
+            url: '../assets/procedural-material.js?diffuseR=0.7&diffuseG=0.7&diffuseB=0.7' + materialArgs,
             load: engine.loaders.procedural,
             onsuccess: function( material ) {
               resources.material = material;
@@ -65,7 +69,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: engine["gladius-cubicvr"].MaterialDefinition,
-            url: '../assets/procedural-material.js?specR=0.1&specG=0.1&specB=0.1',
+            url: '../assets/procedural-material.js?diffuseR=0.1&diffuseG=0.1&diffuseB=0.1' + materialArgs,
             load: engine.loaders.procedural,
             onsuccess: function( material ) {
               resources.materialDull = material;
@@ -75,7 +79,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: engine["gladius-cubicvr"].MaterialDefinition,
-            url: '../assets/procedural-material.js?specR=1&specG=1&specB=1',
+            url: '../assets/procedural-material.js?diffuseR=1&diffuseG=1&diffuseB=1' + materialArgs,
             load: engine.loaders.procedural,
             onsuccess: function( material ) {
               resources.materialShiny = material;
