@@ -11,6 +11,10 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
   var resources = {};
 
+  var materialArgs = 'colorTexture=../assets/images/4734-diffuse.jpg' +
+    '&bumpTexture=../assets/images/4734-bump.jpg' +
+    '&normalTexture=../assets/images/4734-normal.jpg';
+
   engine.get(
     [
       {
@@ -25,7 +29,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       },
       {
         type: engine["gladius-cubicvr"].MaterialDefinition,
-        url: '../assets/procedural-material.js',
+        url: '../assets/procedural-material.js?' + materialArgs,
         load: engine.loaders.procedural,
         onsuccess: function( material ) {
           resources.material = material;
@@ -35,7 +39,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       },
       {
         type: engine["gladius-cubicvr"].MaterialDefinition,
-        url: '../assets/procedural-material.js?R=0&G=0&B=1',
+        url: '../assets/procedural-material.js?diffuseR=0&diffuseG=0&diffuseB=1&' + materialArgs,
         load: engine.loaders.procedural,
         onsuccess: function( material ) {
           resources.altMaterial = material;
@@ -54,7 +58,8 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     var cubicvr = engine.findExtension( "gladius-cubicvr" );
 
     var lightDefinition = new cubicvr.LightDefinition({
-      intensity: 2,
+      intensity: 1,
+      distance:30,
       light_type: cubicvr.LightDefinition.LightTypes.POINT,
       method: cubicvr.LightDefinition.LightingMethods.DYNAMIC
     })
@@ -62,15 +67,13 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     space.add( new engine.Entity( "camera",
       [
         new engine.core.Transform( [0, 0, 0] ),
-        new cubicvr.Camera({
-          targeted: true
-        }),
+        new cubicvr.Camera(),
         new cubicvr.Light()
       ]
     ));
     space.add( new engine.Entity( "light-center",
       [
-        new engine.core.Transform( [0, 0, 5], [engine.math.TAU, engine.math.TAU, engine.math.TAU] )
+        new engine.core.Transform( [0, 0, -6], [engine.math.TAU, engine.math.TAU, engine.math.TAU] )
       ]
     ));
     space.add( new engine.Entity( "light-marker",
@@ -87,7 +90,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     ));
     var parentCube = new engine.Entity( "cube",
       [
-        new engine.core.Transform( [0, 0, 6], [0, -engine.math.TAU/8, engine.math.TAU/8] ),
+        new engine.core.Transform( [0, 0, -6], [0, -engine.math.TAU/8, engine.math.TAU/8] ),
         new cubicvr.Model( resources.mesh, resources.material )
       ]
     );
