@@ -41,6 +41,10 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
       var resources = {};
 
+      var materialArgs = '&colorTexture=../assets/images/2282-diffuse.jpg' +
+        '&bumpTexture=../assets/images/2282-bump.jpg' +
+        '&normalTexture=../assets/images/2282-normal.jpg';
+
       engine.get(
         [
           {
@@ -55,7 +59,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: engine["gladius-cubicvr"].MaterialDefinition,
-            url: '../assets/procedural-material.js',
+            url: '../assets/procedural-material.js?diffuseR=0.7&diffuseG=0.7&diffuseB=0.7' + materialArgs,
             load: engine.loaders.procedural,
             onsuccess: function( material ) {
               resources.material = material;
@@ -65,20 +69,20 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: engine["gladius-cubicvr"].MaterialDefinition,
-            url: '../assets/procedural-material.js?R=0&G=0&B=1',
+            url: '../assets/procedural-material.js?diffuseR=0.1&diffuseG=0.1&diffuseB=0.1' + materialArgs,
             load: engine.loaders.procedural,
             onsuccess: function( material ) {
-              resources.materialBlue = material;
+              resources.materialDull = material;
             },
             onfailure: function( error ) {
             }
           },
           {
             type: engine["gladius-cubicvr"].MaterialDefinition,
-            url: '../assets/procedural-material.js?R=0&G=1&B=0',
+            url: '../assets/procedural-material.js?diffuseR=1&diffuseG=1&diffuseB=1' + materialArgs,
             load: engine.loaders.procedural,
             onsuccess: function( material ) {
-              resources.materialGreen = material;
+              resources.materialShiny = material;
             },
             onfailure: function( error ) {
             }
@@ -97,7 +101,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     var box2d = engine.findExtension( "gladius-box2d" );
 
     var lightDefinition = new cubicvr.LightDefinition({
-      intensity: 2,
+      intensity: 1,
       light_type: cubicvr.LightDefinition.LightTypes.POINT,
       method: cubicvr.LightDefinition.LightingMethods.DYNAMIC
     });
@@ -121,7 +125,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
       firstBody.onContactBegin = function(event){
         console.log("First cube number " + cubeIndex + " contact begin");
-        this.owner.findComponent( "Model").setMaterialDefinition(resources.materialBlue);
+        this.owner.findComponent( "Model").setMaterialDefinition(resources.materialDull);
       };
       firstBody.onContactEnd = function(event){
         console.log("First cube number " + cubeIndex + " contact end");
@@ -139,7 +143,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
       secondBody.onContactBegin = function(event){
         console.log("Second cube number " + cubeIndex + " contact begin");
-        this.owner.findComponent( "Model").setMaterialDefinition(resources.materialGreen);
+        this.owner.findComponent( "Model").setMaterialDefinition(resources.materialShiny);
       };
       secondBody.onContactEnd = function(event){
         console.log("Second cube number " + cubeIndex + " contact end");
