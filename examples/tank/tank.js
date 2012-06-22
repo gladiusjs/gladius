@@ -41,9 +41,9 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       var input = engine.findExtension( "gladius-input" );
       var resources = {};
 
-      var materialArgs = '?colorTexture=../assets/images/2576-diffuse.jpg' +
-        '&bumpTexture=../assets/images/2576-bump.jpg' +
-        '&normalTexture=../assets/images/2576-normal.jpg';
+      var materialArgs = '?colorTexture=../assets/images/tank-diffuse.jpg' +
+        '&bumpTexture=../assets/images/tank-bump.jpg' +
+        '&normalTexture=../assets/images/tank-normal.jpg';
 
       engine.get(
         [
