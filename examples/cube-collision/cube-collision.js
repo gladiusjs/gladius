@@ -41,9 +41,9 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
       var resources = {};
 
-      var materialArgs = '&colorTexture=../assets/images/2282-diffuse.jpg' +
-        '&bumpTexture=../assets/images/2282-bump.jpg' +
-        '&normalTexture=../assets/images/2282-normal.jpg';
+      var materialArgs = '&colorTexture=../assets/images/cube-collision-diffuse.jpg' +
+        '&bumpTexture=../assets/images/cube-collision-bump.jpg' +
+        '&normalTexture=../assets/images/cube-collision-normal.jpg';
 
       engine.get(
         [

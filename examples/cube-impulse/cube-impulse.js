@@ -35,9 +35,9 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
       var resources = {};
 
-      var materialArgs = '?colorTexture=../assets/images/6583-diffuse.jpg' +
-        '&bumpTexture=../assets/images/6583-bump.jpg' +
-        '&normalTexture=../assets/images/6583-normal.jpg';
+      var materialArgs = '?colorTexture=../assets/images/cube-impulse-diffuse.jpg' +
+        '&bumpTexture=../assets/images/cube-impulse-bump.jpg' +
+        '&normalTexture=../assets/images/cube-impulse-normal.jpg';
 
       engine.get(
         [
