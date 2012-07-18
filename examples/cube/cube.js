@@ -100,12 +100,12 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
     var task = new engine.FunctionTask( function() {
       var cubeRotation = new engine.math.Vector3( space.findNamed( "cube" ).findComponent( "Transform" ).rotation );
-      cubeRotation = engine.math.vector3.add( cubeRotation, [space.clock.delta * 0.003, space.clock.delta * 0.001, space.clock.delta * 0.0007] );
-      space.findNamed( "cube" ).findComponent( "Transform" ).setRotation( cubeRotation );
+      cubeRotation.add( [space.clock.delta * 0.003, space.clock.delta * 0.001, space.clock.delta * 0.0007] );
+      space.findNamed( "cube" ).findComponent( "Transform" ).rotation = cubeRotation;
 
       var lightRotation = new engine.math.Vector3( space.findNamed( "light-center" ).findComponent( "Transform" ).rotation );
-      lightRotation = engine.math.vector3.add( lightRotation, [0, space.clock.delta * 0.001, 0] );
-      space.findNamed( "light-center" ).findComponent( "Transform" ).setRotation( lightRotation );
+      lightRotation.add( [0, space.clock.delta * 0.001, 0] );
+      space.findNamed( "light-center" ).findComponent( "Transform" ).rotation = lightRotation;
     }, {
       tags: ["@update"]
     });

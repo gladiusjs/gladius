@@ -111,13 +111,16 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     space.add( parentCube );
 
     var task = new engine.FunctionTask( function() {
-      var cubeRotation = new engine.math.Vector3( space.findNamed( "cube" ).findComponent( "Transform" ).rotation );
-      cubeRotation = engine.math.vector3.add( cubeRotation, [0, space.clock.delta * 0.0003, 0] );
-      space.findNamed( "cube" ).findComponent( "Transform" ).setRotation( cubeRotation );
-
-      var cameraRotation = new engine.math.Vector3( space.findNamed( "camera" ).findComponent( "Transform" ).rotation );
-      cameraRotation = engine.math.vector3.add( cameraRotation, [0, space.clock.delta * 0.0003, 0] );
-      space.findNamed( "camera" ).findComponent( "Transform" ).setRotation( cameraRotation );
+//      var cubeRotation = new engine.math.Vector3( space.findNamed( "cube" ).findComponent( "Transform" ).rotation );
+//      cubeRotation.add([0, space.clock.delta * 0.0000003, 0]);
+//      space.findNamed( "cube" ).findComponent( "Transform" ).rotation = cubeRotation;
+//
+//      var cameraRotation = new engine.math.Vector3( space.findNamed( "camera" ).findComponent( "Transform" ).rotation );
+//      cameraRotation.add( [0, space.clock.delta * 0.0000003, 0] );
+////      console.log(space.clock.delta * 0.0000003);
+////      console.log(space.clock.delta);
+//      console.log(cameraRotation.y);
+//      space.findNamed( "camera" ).findComponent( "Transform" ).rotation = cameraRotation;
     }, {
       tags: ["@update"]
     });
