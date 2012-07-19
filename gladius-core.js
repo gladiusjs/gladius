@@ -4863,6 +4863,14 @@ define('vector/v3',['require','vector/v'],function ( require ) {
   };
 
 });
+define('matrix/matrix',['require'],function ( require ) {
+
+  var Matrix = function() {
+  };
+
+  return Matrix;
+
+});
 define('vector/vector3-api',['require','common/not-implemented','vector/v3'],function ( require ) {
 
   return function( FLOAT_ARRAY_TYPE ) {
@@ -5011,6 +5019,21 @@ define('vector/vector3-api',['require','common/not-implemented','vector/v3'],fun
       return result;
     }
 
+    //This does a matrix3 by vector3 transform, which is a matrix multiplication
+    //The matrix3 is on the left side of the multiplication and is multiplied by
+    // the vector in column form
+    function transform( v, m, result ) {
+      result = result || new V3();
+
+      var x = v[0], y = v[1], z = v[2];
+
+      result[0] = m[0] * x + m[1] * y + m[2] * z;
+      result[1] = m[3] * x + m[4] * y + m[5] * z;
+      result[2] = m[6] * x + m[7] * y + m[8] * z;
+
+      return result;
+    }
+
     var vector3 = {
       add: add,
       angle: angle,
@@ -5026,6 +5049,7 @@ define('vector/vector3-api',['require','common/not-implemented','vector/v3'],fun
       normalize: normalize,
       set: set,
       subtract: subtract,
+      transform: transform,
 
       x: new V3( 1, 0, 0 ),
       y: new V3( 0, 1, 0 ),
@@ -5039,7 +5063,7 @@ define('vector/vector3-api',['require','common/not-implemented','vector/v3'],fun
   };
 
 });
-define('vector/vector3',['require','../../lib/lodash','common/not-implemented','vector/v3','vector/vector3-api','vector/vector'],function ( require ) {
+define('vector/vector3',['require','../../lib/lodash','common/not-implemented','vector/v3','vector/vector3-api','matrix/matrix','vector/vector'],function ( require ) {
 
   return function( FLOAT_ARRAY_TYPE ) {
     
@@ -5047,6 +5071,7 @@ define('vector/vector3',['require','../../lib/lodash','common/not-implemented','
     var notImplemented = require( "common/not-implemented" );
     var V3 = require( "vector/v3" )( FLOAT_ARRAY_TYPE );
     var vector3 = require( "vector/vector3-api" )( FLOAT_ARRAY_TYPE );
+    var Matrix = require( "matrix/matrix" );
     var Vector = require( "vector/vector" );
 
     function getValue( index ) {
@@ -5229,7 +5254,22 @@ define('vector/vector3',['require','../../lib/lodash','common/not-implemented','
       result.modified = true;
 
       return this;
-    }    
+    }
+
+    function transform( arg, result ) {
+      var other;
+      if( arg instanceof Matrix ) {
+        other = arg.buffer;
+      } else {
+        other = arg;
+      }
+
+      result = result || this;
+      vector3.transform( this.buffer, other, result.buffer );
+      result.modified = true;
+
+      return this;
+    }
     
     _.extend( Vector3.prototype, {
       add: add,
@@ -5245,7 +5285,8 @@ define('vector/vector3',['require','../../lib/lodash','common/not-implemented','
       negate: negate,
       normalize: normalize,
       set: set,
-      subtract: subtract
+      subtract: subtract,
+      transform: transform
     });
 
     return Vector3;
@@ -5291,14 +5332,6 @@ define('vector/v4',['require','vector/v'],function ( require ) {
     return V4;
 
   };
-
-});
-define('matrix/matrix',['require'],function ( require ) {
-
-  var Matrix = function() {
-  };
-
-  return Matrix;
 
 });
 define('vector/vector4-api',['require','common/not-implemented','vector/v4'],function ( require ) {
@@ -11069,7 +11102,10 @@ define('matrix/transform-api',['require','common/not-implemented','matrix/m4','m
     var M4 = require( "matrix/m4" )( FLOAT_ARRAY_TYPE );
     var matrix4 = require( "matrix/matrix4-api" )( FLOAT_ARRAY_TYPE );
 
-    function fixed( t, r, s, result ) {
+    function compound( t, r, s, result ) {
+      if (result){
+        matrix4.set(result, matrix4.identity);
+      }
       result = result || new M4( matrix4.identity );
 
       if( t ) {
@@ -11153,7 +11189,7 @@ define('matrix/transform-api',['require','common/not-implemented','matrix/m4','m
     }
 
     var transform = {
-      fixed: fixed,
+      compound: compound,
       rotate: rotate,
       scale: scale,
       translate: translate
@@ -11228,10 +11264,10 @@ define('matrix/transform',['require','common/not-implemented','matrix/m4','matri
         } else if( arg1 instanceof M4 ) {
           this.buffer = new M4( arg1 );
         } else {
-          this.buffer = transform.fixed( arg1, arg2, arg3 );
+          this.buffer = transform.compound( arg1, arg2, arg3 );
         }
       } else {
-        this.buffer = transform.fixed( arg1, arg2, arg3 );
+        this.buffer = transform.compound( arg1, arg2, arg3 );
       }
 
       Object.defineProperties( this, {
@@ -11309,8 +11345,7 @@ define('matrix/transform',['require','common/not-implemented','matrix/m4','matri
     }
 
     function set( t, r, s ) {
-      matrix4.set( this.buffer, matrix4.identity );
-      transform.fixed( t, r, s, this.buffer );
+      transform.compound( t, r, s, this.buffer );
       this.modified = true;
     }
 
@@ -13926,7 +13961,7 @@ define('core/components/transform',['require','_math','common/extend','base/comp
     if( this._cachedLocalMatrixIsValid ) {
       return this._cachedLocalMatrix;
     } else {
-      math.transform.fixed( this.position.buffer, this.rotation.buffer, this.scale.buffer, this._cachedLocalMatrix.buffer );
+      math.transform.compound( this.position.buffer, this.rotation.buffer, this.scale.buffer, this._cachedLocalMatrix.buffer);
       this._cachedLocalMatrixIsValid = true;
       return this._cachedLocalMatrix;
     }

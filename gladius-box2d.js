@@ -12234,7 +12234,10 @@ define('matrix/transform-api',['require','common/not-implemented','matrix/m4','m
     var M4 = require( "matrix/m4" )( FLOAT_ARRAY_TYPE );
     var matrix4 = require( "matrix/matrix4-api" )( FLOAT_ARRAY_TYPE );
 
-    function fixed( t, r, s, result ) {
+    function compound( t, r, s, result ) {
+      if (result){
+        matrix4.set(result, matrix4.identity);
+      }
       result = result || new M4( matrix4.identity );
 
       if( t ) {
@@ -12318,7 +12321,7 @@ define('matrix/transform-api',['require','common/not-implemented','matrix/m4','m
     }
 
     var transform = {
-      fixed: fixed,
+      compound: compound,
       rotate: rotate,
       scale: scale,
       translate: translate
@@ -12393,10 +12396,10 @@ define('matrix/transform',['require','common/not-implemented','matrix/m4','matri
         } else if( arg1 instanceof M4 ) {
           this.buffer = new M4( arg1 );
         } else {
-          this.buffer = transform.fixed( arg1, arg2, arg3 );
+          this.buffer = transform.compound( arg1, arg2, arg3 );
         }
       } else {
-        this.buffer = transform.fixed( arg1, arg2, arg3 );
+        this.buffer = transform.compound( arg1, arg2, arg3 );
       }
 
       Object.defineProperties( this, {
@@ -12474,8 +12477,7 @@ define('matrix/transform',['require','common/not-implemented','matrix/m4','matri
     }
 
     function set( t, r, s ) {
-      matrix4.set( this.buffer, matrix4.identity );
-      transform.fixed( t, r, s, this.buffer );
+      transform.compound( t, r, s, this.buffer );
       this.modified = true;
     }
 
@@ -99843,8 +99845,8 @@ define('src/components/body',['require','box2d','common/extend','base/component'
 
     // TD: This will cause the transform to emit an event that we handle below. Blech!
     var transform = this.owner.findComponent( "Transform" );
-    transform.setPosition( math.Vector3( position2.get_x(), position2.get_y(), transform.position[2] ) );
-    transform.setRotation( math.Vector3( transform.rotation.x, transform.rotation.y, angle2 ) );
+    transform.position = [ position2.get_x(), position2.get_y(), transform.position.z ];
+    transform.rotation = [ transform.rotation.x, transform.rotation.y, angle2 ];
   }
 
   function onEntitySpaceChanged( event ) {
