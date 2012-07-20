@@ -12234,25 +12234,28 @@ define('matrix/transform-api',['require','common/not-implemented','matrix/m4','m
     var M4 = require( "matrix/m4" )( FLOAT_ARRAY_TYPE );
     var matrix4 = require( "matrix/matrix4-api" )( FLOAT_ARRAY_TYPE );
 
-    function compound( t, r, s, result ) {
-      if (result){
-        matrix4.set(result, matrix4.identity);
-      }
-      result = result || new M4( matrix4.identity );
+    function compound( transform, t, r, s ) {
 
       if( t ) {
-        translate( t, result );
+        translate( t, transform );
       }
 
       if( r ) {
-        rotate( r, result );
+        rotate( r, transform );
       }
 
       if( s ) {
-        scale( s, result );
+        scale( s, transform );
       }
 
-      return result;
+      return transform;
+    }
+
+    function set(transform, t, r, s){
+      if (transform){
+        matrix4.set(transform, matrix4.identity);
+      }
+      return compound(transform, t, r, s);
     }
 
     function rotate( v, result ) {
@@ -12270,7 +12273,7 @@ define('matrix/transform-api',['require','common/not-implemented','matrix/m4','m
                      -sinA, cosA, 0, 0,
                      0, 0, 1, 0,
                      0, 0, 0, 1 ];
-        matrix4.multiply( rotation, result, result );
+        matrix4.multiply( result, rotation, result );
       }
 
       if( 0 !== v[1] ) {
@@ -12281,7 +12284,7 @@ define('matrix/transform-api',['require','common/not-implemented','matrix/m4','m
                      0, 1, 0, 0,
                      sinA, 0, cosA, 0,
                      0, 0, 0, 1 ];
-        matrix4.multiply( rotation, result, result );
+        matrix4.multiply( result, rotation, result );
       }
 
       if( 0 !== v[0] ) {
@@ -12292,7 +12295,7 @@ define('matrix/transform-api',['require','common/not-implemented','matrix/m4','m
                      0, cosA, sinA, 0,
                      0, -sinA, cosA, 0,
                      0, 0, 0, 1 ];
-        matrix4.multiply( rotation, result, result );
+        matrix4.multiply( result, rotation, result );
       }
 
       return result;
@@ -12322,12 +12325,33 @@ define('matrix/transform-api',['require','common/not-implemented','matrix/m4','m
 
     var transform = {
       compound: compound,
+      set: set,
       rotate: rotate,
       scale: scale,
       translate: translate
     };
 
     return transform;
+
+  };
+
+});
+define('matrix/t',['require','matrix/m','matrix/m4','matrix/transform-api'],function ( require ) {
+
+  return function( FLOAT_ARRAY_TYPE ) {
+
+    var M = require( "matrix/m" );
+    var M4 = require( "matrix/m4" )( FLOAT_ARRAY_TYPE );
+    var transform = require("matrix/transform-api")( FLOAT_ARRAY_TYPE );
+
+    var T = function(t, r, s) {
+      var matrix = new M4();
+      return transform.set(matrix, t, r, s);
+    };
+    T.prototype = new M();
+    T.prototype.constructor = T;
+
+    return T;
 
   };
 
@@ -12518,7 +12542,7 @@ define('matrix/transform',['require','common/not-implemented','matrix/m4','matri
   };
 
 });
-define('_math',['require','constants','equal','vector/v2','vector/vector2','vector/vector2-api','vector/v3','vector/vector3','vector/vector3-api','vector/v4','vector/vector4','vector/vector4-api','matrix/m2','matrix/matrix2','matrix/matrix2-api','matrix/m3','matrix/matrix3','matrix/matrix3-api','matrix/m4','matrix/matrix4','matrix/matrix4-api','matrix/transform','matrix/transform-api'],function ( require ) {
+define('_math',['require','constants','equal','vector/v2','vector/vector2','vector/vector2-api','vector/v3','vector/vector3','vector/vector3-api','vector/v4','vector/vector4','vector/vector4-api','matrix/m2','matrix/matrix2','matrix/matrix2-api','matrix/m3','matrix/matrix3','matrix/matrix3-api','matrix/m4','matrix/matrix4','matrix/matrix4-api','matrix/t','matrix/transform','matrix/transform-api'],function ( require ) {
 
   var constants = require( "constants" );
   var equal = require( "equal" );
@@ -12547,6 +12571,7 @@ define('_math',['require','constants','equal','vector/v2','vector/vector2','vect
   var Matrix4 = require( "matrix/matrix4" );
   var matrix4 = require( "matrix/matrix4-api" );
 
+  var T = require( "matrix/t" );
   var Transform = require( "matrix/transform" );
   var transform = require( "matrix/transform-api" );
 
@@ -12600,6 +12625,7 @@ define('_math',['require','constants','equal','vector/v2','vector/vector2','vect
       matrix4: matrix4( ARRAY_TYPE )
     });
     extend( this, {
+      T: T( ARRAY_TYPE ),
       Transform: Transform( ARRAY_TYPE ),
       transform: transform( ARRAY_TYPE )
     });
