@@ -99,13 +99,9 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     space.findNamed( "light-marker" ).setParent( space.findNamed( "light-center" ) );
 
     var task = new engine.FunctionTask( function() {
-      var cubeRotation = new engine.math.Vector3( space.findNamed( "cube" ).findComponent( "Transform" ).rotation );
-      cubeRotation.add( [space.clock.delta * 0.003, space.clock.delta * 0.001, space.clock.delta * 0.0007] );
-      space.findNamed( "cube" ).findComponent( "Transform" ).rotation = cubeRotation;
+      space.findNamed( "cube" ).findComponent( "Transform" ).rotation.add([space.clock.delta * 0.003, space.clock.delta * 0.001, space.clock.delta * 0.0007]);
 
-      var lightRotation = new engine.math.Vector3( space.findNamed( "light-center" ).findComponent( "Transform" ).rotation );
-      lightRotation.add( [0, space.clock.delta * 0.001, 0] );
-      space.findNamed( "light-center" ).findComponent( "Transform" ).rotation = lightRotation;
+      space.findNamed( "light-center" ).findComponent( "Transform" ).rotation.add([0, space.clock.delta * 0.001, 0]);
     }, {
       tags: ["@update"]
     });

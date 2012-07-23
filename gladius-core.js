@@ -11137,8 +11137,8 @@ define('matrix/transform-api',['require','common/not-implemented','matrix/m4','m
         sinA = Math.sin( v[2] );
         cosA = Math.cos( v[2] );
 
-        rotation = [ cosA, sinA, 0, 0,
-                     -sinA, cosA, 0, 0,
+        rotation = [ cosA, -sinA, 0, 0,
+                     sinA, cosA, 0, 0,
                      0, 0, 1, 0,
                      0, 0, 0, 1 ];
         matrix4.multiply( result, rotation, result );
@@ -11148,9 +11148,9 @@ define('matrix/transform-api',['require','common/not-implemented','matrix/m4','m
         sinA = Math.sin( v[1] );
         cosA = Math.cos( v[1] );
 
-        rotation = [ cosA, 0, -sinA, 0,
+        rotation = [ cosA, 0, sinA, 0,
                      0, 1, 0, 0,
-                     sinA, 0, cosA, 0,
+                     -sinA, 0, cosA, 0,
                      0, 0, 0, 1 ];
         matrix4.multiply( result, rotation, result );
       }
@@ -11160,8 +11160,8 @@ define('matrix/transform-api',['require','common/not-implemented','matrix/m4','m
         cosA = Math.cos( v[0] );
         
         rotation = [ 1, 0, 0, 0,
-                     0, cosA, sinA, 0,
-                     0, -sinA, cosA, 0,
+                     0, cosA, -sinA, 0,
+                     0, sinA, cosA, 0,
                      0, 0, 0, 1 ];
         matrix4.multiply( result, rotation, result );
       }
@@ -11369,7 +11369,7 @@ define('matrix/transform',['require','common/not-implemented','matrix/m4','matri
     }
 
     function set( t, r, s ) {
-      transform.compound( t, r, s, this.buffer );
+      transform.compound( this.buffer, t, r, s );
       this.modified = true;
     }
 
@@ -13938,10 +13938,6 @@ define('core/components/transform',['require','_math','common/extend','base/comp
     // Local position
     this._position = position ? new math.Vector3( position ) : new math.Vector3( math.vector3.zero );
     this.__defineGetter__( "position", function() {
-      if( this._position.modified ) {
-        // Update local position
-        this._position.modified = false;
-      }
       return this._position;
     });
     this.__defineSetter__( "position", function( value ) {
@@ -13984,11 +13980,14 @@ define('core/components/transform',['require','_math','common/extend','base/comp
 
   // Return the relative transform
   function computeLocalMatrix() {
-    if( this._cachedLocalMatrixIsValid ) {
+    if( this._cachedLocalMatrixIsValid && !this.position.modified && !this.rotation.modified && !this.scale.modified) {
       return this._cachedLocalMatrix;
     } else {
-      math.transform.set(this._cachedLocalMatrix.buffer, this.position.buffer, this.rotation.buffer, this.scale.buffer);
+      math.transform.set(this._cachedLocalMatrix, this.position.buffer, this.rotation.buffer, this.scale.buffer);
       this._cachedLocalMatrixIsValid = true;
+      this.position.modified = false;
+      this.rotation.modified = false;
+      this.scale.modified = false;
       return this._cachedLocalMatrix;
     }
   }
@@ -13998,10 +13997,10 @@ define('core/components/transform',['require','_math','common/extend','base/comp
     if( this.owner && this.owner.parent && 
         this.owner.parent.hasComponent( "Transform" ) ) {
       var parentTransform = this.owner.parent.findComponent( "Transform" );                            
-      math.matrix4.multiply( computeLocalMatrix.call( this).buffer, parentTransform.worldMatrix().buffer,
-        this._cachedWorldMatrix.buffer );
+      math.matrix4.multiply( parentTransform.worldMatrix(), computeLocalMatrix.call( this),
+        this._cachedWorldMatrix );
     } else {
-      math.matrix4.set( this._cachedWorldMatrix.buffer, computeLocalMatrix.call( this).buffer );
+      math.matrix4.set( this._cachedWorldMatrix, computeLocalMatrix.call( this) );
     }
     return this._cachedWorldMatrix;
   }
