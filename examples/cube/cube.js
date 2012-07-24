@@ -101,7 +101,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     var task = new engine.FunctionTask( function() {
       space.findNamed( "cube" ).findComponent( "Transform" ).rotation.add([space.clock.delta * 0.003, space.clock.delta * 0.001, space.clock.delta * 0.0007]);
 
-      space.findNamed( "light-center" ).findComponent( "Transform" ).rotation.add([0, space.clock.delta * 0.001, 0]);
+      space.findNamed( "light-center" ).findComponent( "Transform" ).rotation.y += space.clock.delta * 0.001;
     }, {
       tags: ["@update"]
     });

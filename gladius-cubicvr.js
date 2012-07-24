@@ -21404,226 +21404,6 @@ define('core/event',['require'],function( require ) {
   return Event;
 
 });
-if ( typeof define !== "function" ) {
-  var define = require( "amdefine" )( module );
-}
-
-define('src/services/renderer',['require','base/service','CubicVR','src/services/target','core/event'],function ( require ) {
-
-  var Service = require( "base/service" );
-  require( "CubicVR" );
-  var Target = require( "src/services/target" );
-  var Event = require( "core/event" );
-
-  var Renderer = function( scheduler, options ) {
-    options = options || {};
-    
-    var schedules = {
-        "render": {
-          tags: ["@render", "graphics"],
-          dependsOn: []
-        }
-    };
-    Service.call( this, scheduler, schedules );
-
-    this.target = new Target( options.canvas );
-  };
-
-  function _convertToCVRMatrix(cvrMatrix, gladiusMatrix){
-    //Swap out indexes 12, 13, 14 for 3, 7, 11
-    cvrMatrix[0] = gladiusMatrix[0];
-    cvrMatrix[1] = gladiusMatrix[4];
-    cvrMatrix[2] = gladiusMatrix[8];
-    cvrMatrix[3] = gladiusMatrix[12];
-    cvrMatrix[4] = gladiusMatrix[1];
-    cvrMatrix[5] = gladiusMatrix[5];
-    cvrMatrix[6] = gladiusMatrix[9];
-    cvrMatrix[7] = gladiusMatrix[13];
-    cvrMatrix[8] = gladiusMatrix[2];
-    cvrMatrix[9] = gladiusMatrix[6];
-    cvrMatrix[10] = gladiusMatrix[10];
-    cvrMatrix[11] = gladiusMatrix[14];
-    cvrMatrix[12] = gladiusMatrix[3];
-    cvrMatrix[13] = gladiusMatrix[7];
-    cvrMatrix[14] = gladiusMatrix[11];
-    cvrMatrix[15] = gladiusMatrix[15];
-    return cvrMatrix;
-  }
-
-  function render() {
-    var context = this.target.context;
-    var registeredComponents = this._registeredComponents;
-    var gl = context.GLCore.gl;
-    var spaces = {};
-    var sIndex, sLength;
-    var component;
-
-    // Update all graphics components
-    var updateEvent = new Event( 'Update', undefined, false );
-    for( var componentType in registeredComponents ) {
-      for( var entityId in registeredComponents[componentType] ) {
-        component = registeredComponents[componentType][entityId];
-        while( component.handleQueuedEvent() ) {}
-        updateEvent.dispatch( component );
-      }
-    }
-
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    var cameraOwnerIds = Object.keys( registeredComponents["Camera"] || {} );
-    cameraOwnerIds.forEach( function( id ) {
-      var ownerSpace = registeredComponents["Camera"][id].owner.space;
-      if( !spaces.hasOwnProperty( ownerSpace.id ) ) {
-        spaces[ownerSpace.id] = ownerSpace;
-      }
-    });
-    var spaceIds = Object.keys( spaces );
-
-    for( sIndex = 0, sLength = spaceIds.length; sIndex < sLength; ++ sIndex ) {
-      var spaceId = spaceIds[sIndex];
-      var space = spaces[spaceId];
-      var i, l;
-      var cameraEntities = space.findAllWith( "Camera" );
-      var modelEntities = space.findAllWith( "Model" );
-      var lightEntities = space.findAllWith( "Light" );
-
-      // Handle lights for the current space
-      var cubicvrLights = [];
-      for( i = 0, l = lightEntities.length; i < l; ++ i ) {
-        var light = lightEntities[i].findComponent( "Light" );
-        cubicvrLights.push( light._cubicvrLight );
-      }
-
-      var convertedTransform = [];
-      // Render the space for each camera
-      for( i = 0, l = cameraEntities.length; i < l; ++ i ) {
-        var camera = cameraEntities[ i ].findComponent( "Camera" );
-
-        cubicvrLights.forEach( function( light ) {
-          light.prepare( camera._cubicvrCamera );
-        });
-
-        for( var mi = 0, ml = modelEntities.length; mi < ml; ++mi ) {
-          var model = modelEntities[ mi ].findComponent( "Model" );
-          var transform = modelEntities[ mi ].findComponent( "Transform" );
-          _convertToCVRMatrix(convertedTransform, transform.worldMatrix());
-
-
-          model._cubicvrMesh.instanceMaterials = [model._cubicvrMaterialDefinition];
-
-          context.renderObject(
-              model._cubicvrMesh,
-              camera._cubicvrCamera,
-              convertedTransform,
-              cubicvrLights
-          );
-
-          model._cubicvrMesh.instanceMaterials = null;
-        }
-      }
-    }
-  }
-
-  Renderer.prototype = new Service();
-  Renderer.prototype.constructor = Renderer;
-  Renderer.prototype.render = render;
-
-  return Renderer;
-
-});
-if ( typeof define !== "function" ) {
-  var define = require( "amdefine" )( module );
-}
-
-define('common/extend',['require'],function ( require ) {
-  
-
-  function extend( object, extra ) {
-    for ( var prop in extra ) {                
-      if ( !object.hasOwnProperty( prop ) && extra.hasOwnProperty( prop ) ) {
-        object[prop] = extra[prop];
-      }
-    }
-    return object;
-  }
-
-  return extend;
-
-});
-
-if ( typeof define !== "function" ) {
-  var define = require( "amdefine" )( module );
-}
-
-define('base/component',['require','core/event'],function( require ) {
-
-  var Event = require( "core/event" );
-
-  var Component = function( type, provider, dependsOn ) {
-    this.type = type; // String identifying the type of this component
-    this.provider = provider; // Reference to the object instance that provides
-                              // this component
-    this.dependsOn = dependsOn || []; // List of component types that this
-                                      // component depends on
-    this.owner = null; // Reference to the entity instance that owns this
-    this._queuedEvents = []; // List of queued events
-  };
-
-  function setOwner( owner ) {
-    if( owner !== this.owner ) {
-      var previous = this.owner;
-      this.owner = owner;
-      var event = new Event(
-        'ComponentOwnerChanged',
-        {
-          current: owner,
-          previous: previous
-        },
-        false
-      );
-      event.dispatch( this );
-    }
-  }
-
-  function handleEvent( event ) {
-    if( "on" + event.type in this ) {
-      if( event.queue ) {
-        this._queuedEvents.push( event );
-      } else {
-        var handler = this["on" + event.type];
-        try {
-          handler.call( this, event );
-        } catch( error ) {
-          console.log( error );
-        }
-      }
-    }
-  }
-
-  function handleQueuedEvent() {
-    if( this._queuedEvents.length > 0 ) {
-      var event = this._queuedEvents.shift();
-      if( "on" + event.type in this ) {
-        var handler = this["on" + event.type];
-        try {
-          handler.call( this, event );
-        } catch( error ) {
-          console.log( error );
-        }
-      }
-    }
-    return this._queuedEvents.length;
-  }
-
-  Component.prototype = {
-      setOwner: setOwner,
-      handleEvent: handleEvent,
-      handleQueuedEvent: handleQueuedEvent
-  };
-
-  return Component;
-
-});
 /**
  * @license
  * Copyright (c) 2011, Mozilla Foundation
@@ -32825,6 +32605,207 @@ if ( typeof define !== "function" ) {
   var define = require( "amdefine" )( module );
 }
 
+define('src/services/renderer',['require','base/service','CubicVR','src/services/target','core/event','_math'],function ( require ) {
+
+  var Service = require( "base/service" );
+  require( "CubicVR" );
+  var Target = require( "src/services/target" );
+  var Event = require( "core/event" );
+  var math = require( "_math" );
+
+  var Renderer = function( scheduler, options ) {
+    options = options || {};
+    
+    var schedules = {
+        "render": {
+          tags: ["@render", "graphics"],
+          dependsOn: []
+        }
+    };
+    Service.call( this, scheduler, schedules );
+
+    this.target = new Target( options.canvas );
+  };
+
+  var convertedTransform = new math.T();
+
+  function render() {
+    var context = this.target.context;
+    var registeredComponents = this._registeredComponents;
+    var gl = context.GLCore.gl;
+    var spaces = {};
+    var sIndex, sLength;
+    var component;
+
+    // Update all graphics components
+    var updateEvent = new Event( 'Update', undefined, false );
+    for( var componentType in registeredComponents ) {
+      for( var entityId in registeredComponents[componentType] ) {
+        component = registeredComponents[componentType][entityId];
+        while( component.handleQueuedEvent() ) {}
+        updateEvent.dispatch( component );
+      }
+    }
+
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    var cameraOwnerIds = Object.keys( registeredComponents["Camera"] || {} );
+    cameraOwnerIds.forEach( function( id ) {
+      var ownerSpace = registeredComponents["Camera"][id].owner.space;
+      if( !spaces.hasOwnProperty( ownerSpace.id ) ) {
+        spaces[ownerSpace.id] = ownerSpace;
+      }
+    });
+    var spaceIds = Object.keys( spaces );
+
+    for( sIndex = 0, sLength = spaceIds.length; sIndex < sLength; ++ sIndex ) {
+      var spaceId = spaceIds[sIndex];
+      var space = spaces[spaceId];
+      var i, l;
+      var cameraEntities = space.findAllWith( "Camera" );
+      var modelEntities = space.findAllWith( "Model" );
+      var lightEntities = space.findAllWith( "Light" );
+
+      // Handle lights for the current space
+      var cubicvrLights = [];
+      for( i = 0, l = lightEntities.length; i < l; ++ i ) {
+        var light = lightEntities[i].findComponent( "Light" );
+        cubicvrLights.push( light._cubicvrLight );
+      }
+
+      // Render the space for each camera
+      for( i = 0, l = cameraEntities.length; i < l; ++ i ) {
+        var camera = cameraEntities[ i ].findComponent( "Camera" );
+
+        cubicvrLights.forEach( function( light ) {
+          light.prepare( camera._cubicvrCamera );
+        });
+
+        for( var mi = 0, ml = modelEntities.length; mi < ml; ++mi ) {
+          var model = modelEntities[ mi ].findComponent( "Model" );
+          var transform = modelEntities[ mi ].findComponent( "Transform" );
+          math.matrix4.transpose(transform.worldMatrix(), convertedTransform);
+
+
+          model._cubicvrMesh.instanceMaterials = [model._cubicvrMaterialDefinition];
+
+          context.renderObject(
+              model._cubicvrMesh,
+              camera._cubicvrCamera,
+              convertedTransform,
+              cubicvrLights
+          );
+
+          model._cubicvrMesh.instanceMaterials = null;
+        }
+      }
+    }
+  }
+
+  Renderer.prototype = new Service();
+  Renderer.prototype.constructor = Renderer;
+  Renderer.prototype.render = render;
+
+  return Renderer;
+
+});
+if ( typeof define !== "function" ) {
+  var define = require( "amdefine" )( module );
+}
+
+define('common/extend',['require'],function ( require ) {
+  
+
+  function extend( object, extra ) {
+    for ( var prop in extra ) {                
+      if ( !object.hasOwnProperty( prop ) && extra.hasOwnProperty( prop ) ) {
+        object[prop] = extra[prop];
+      }
+    }
+    return object;
+  }
+
+  return extend;
+
+});
+
+if ( typeof define !== "function" ) {
+  var define = require( "amdefine" )( module );
+}
+
+define('base/component',['require','core/event'],function( require ) {
+
+  var Event = require( "core/event" );
+
+  var Component = function( type, provider, dependsOn ) {
+    this.type = type; // String identifying the type of this component
+    this.provider = provider; // Reference to the object instance that provides
+                              // this component
+    this.dependsOn = dependsOn || []; // List of component types that this
+                                      // component depends on
+    this.owner = null; // Reference to the entity instance that owns this
+    this._queuedEvents = []; // List of queued events
+  };
+
+  function setOwner( owner ) {
+    if( owner !== this.owner ) {
+      var previous = this.owner;
+      this.owner = owner;
+      var event = new Event(
+        'ComponentOwnerChanged',
+        {
+          current: owner,
+          previous: previous
+        },
+        false
+      );
+      event.dispatch( this );
+    }
+  }
+
+  function handleEvent( event ) {
+    if( "on" + event.type in this ) {
+      if( event.queue ) {
+        this._queuedEvents.push( event );
+      } else {
+        var handler = this["on" + event.type];
+        try {
+          handler.call( this, event );
+        } catch( error ) {
+          console.log( error );
+        }
+      }
+    }
+  }
+
+  function handleQueuedEvent() {
+    if( this._queuedEvents.length > 0 ) {
+      var event = this._queuedEvents.shift();
+      if( "on" + event.type in this ) {
+        var handler = this["on" + event.type];
+        try {
+          handler.call( this, event );
+        } catch( error ) {
+          console.log( error );
+        }
+      }
+    }
+    return this._queuedEvents.length;
+  }
+
+  Component.prototype = {
+      setOwner: setOwner,
+      handleEvent: handleEvent,
+      handleQueuedEvent: handleQueuedEvent
+  };
+
+  return Component;
+
+});
+if ( typeof define !== "function" ) {
+  var define = require( "amdefine" )( module );
+}
+
 define('src/components/camera',['require','common/extend','base/component','_math'],function( require ) {
 
   var extend = require( "common/extend" );
@@ -32844,9 +32825,8 @@ define('src/components/camera',['require','common/extend','base/component','_mat
       targeted: (options.targeted === undefined) ? false : options.targeted
     });
     this._cubicvrCamera.parent = {
-      tMatrix: []
+      tMatrix: new math.T()
     };
-    _convertToCVRMatrix(this._cubicvrCamera.parent.tMatrix, math.matrix4.identity);
 
     this.target = [0, 0, 0];
     this._targetHasChanged = false;
@@ -32857,7 +32837,7 @@ define('src/components/camera',['require','common/extend','base/component','_mat
   Camera.prototype.constructor = Camera;
 
   function onUpdate( event ) {
-    _convertToCVRMatrix(this._cubicvrCamera.parent.tMatrix, this.owner.findComponent("Transform").worldMatrix());
+    math.matrix4.transpose(this.owner.findComponent( "Transform" ).worldMatrix(), this._cubicvrCamera.parent.tMatrix);
     if( this._targetHasChanged ) {
       this._cubicvrCamera.lookat( this.target );
       this._targetHasChanged = false;
@@ -32883,7 +32863,7 @@ define('src/components/camera',['require','common/extend','base/component','_mat
     }
 
     if( this.owner ) {
-      _convertToCVRMatrix(this._cubicvrCamera.parent.tMatrix, this.owner.findComponent("Transform").worldMatrix());
+      math.matrix4.transpose(this.owner.findComponent( "Transform" ).worldMatrix(), this._cubicvrCamera.parent.tMatrix);
     }
 
     if( this.owner === null && data.previous !== null ) {
@@ -32905,34 +32885,12 @@ define('src/components/camera',['require','common/extend','base/component','_mat
     this._targetHasChanged = true;
   }
 
-  function _convertToCVRMatrix(cvrMatrix, gladiusMatrix){
-    //Swap out indexes 12, 13, 14 for 3, 7, 11
-    cvrMatrix[0] = gladiusMatrix[0];
-    cvrMatrix[1] = gladiusMatrix[4];
-    cvrMatrix[2] = gladiusMatrix[8];
-    cvrMatrix[3] = gladiusMatrix[12];
-    cvrMatrix[4] = gladiusMatrix[1];
-    cvrMatrix[5] = gladiusMatrix[5];
-    cvrMatrix[6] = gladiusMatrix[9];
-    cvrMatrix[7] = gladiusMatrix[13];
-    cvrMatrix[8] = gladiusMatrix[2];
-    cvrMatrix[9] = gladiusMatrix[6];
-    cvrMatrix[10] = gladiusMatrix[10];
-    cvrMatrix[11] = gladiusMatrix[14];
-    cvrMatrix[12] = gladiusMatrix[3];
-    cvrMatrix[13] = gladiusMatrix[7];
-    cvrMatrix[14] = gladiusMatrix[11];
-    cvrMatrix[15] = gladiusMatrix[15];
-    return cvrMatrix;
-  }
-
   var prototype = {
     onUpdate: onUpdate,
     onEntitySpaceChanged: onEntitySpaceChanged,
     onComponentOwnerChanged: onComponentOwnerChanged,
     onEntityActivationChanged: onEntityActivationChanged,
-    setTarget: setTarget,
-    _convertToCVRMatrix: _convertToCVRMatrix
+    setTarget: setTarget
   };
   extend( Camera.prototype, prototype );
 
@@ -33136,9 +33094,8 @@ define('src/components/light',['require','src/resources/light-definition','base/
       this._cubicvrLight = new service.target.context.Light(lightDefinition);
 
       this._cubicvrLight.parent = {
-        tMatrix: []
+        tMatrix: new math.T()
       };
-      _convertToCVRMatrix(this._cubicvrLight.parent.tMatrix, math.matrix4.identity);
 
       for (var propertyIndex = 0; propertyIndex < properties.length; propertyIndex++){
         this[properties[propertyIndex]] = lightDefinition[properties[propertyIndex]];
@@ -33151,7 +33108,7 @@ define('src/components/light',['require','src/resources/light-definition','base/
       for (var propertyIndex = 0; propertyIndex < properties.length; propertyIndex++){
         this._cubicvrLight[properties[propertyIndex]] = this[properties[propertyIndex]];
       }
-      _convertToCVRMatrix(this._cubicvrLight.parent.tMatrix, this.owner.findComponent( "Transform" ).worldMatrix());
+      math.matrix4.transpose(this.owner.findComponent( "Transform" ).worldMatrix(), this._cubicvrLight.parent.tMatrix);
     }
 
     function onEntitySpaceChanged( event ) {
@@ -33161,7 +33118,7 @@ define('src/components/light',['require','src/resources/light-definition','base/
       }
 
       if( this.owner ) {
-        _convertToCVRMatrix(this._cubicvrLight.parent.tMatrix, this.owner.findComponent( "Transform" ).worldMatrix());
+        math.matrix4.transpose(this.owner.findComponent( "Transform" ).worldMatrix(), this._cubicvrLight.parent.tMatrix);
       }
 
       if( data.previous !== null && data.current === null && this.owner !== null ) {
@@ -33176,7 +33133,7 @@ define('src/components/light',['require','src/resources/light-definition','base/
       }
 
       if( this.owner ) {
-        _convertToCVRMatrix(this._cubicvrLight.parent.tMatrix, this.owner.findComponent( "Transform" ).worldMatrix());
+        math.matrix4.transpose(this.owner.findComponent( "Transform" ).worldMatrix(), this._cubicvrLight.parent.tMatrix);
       }
 
       if( this.owner === null && data.previous !== null ) {
@@ -33193,33 +33150,11 @@ define('src/components/light',['require','src/resources/light-definition','base/
       }
     }
 
-  function _convertToCVRMatrix(cvrMatrix, gladiusMatrix){
-    //Swap out indexes 12, 13, 14 for 3, 7, 11
-    cvrMatrix[0] = gladiusMatrix[0];
-    cvrMatrix[1] = gladiusMatrix[4];
-    cvrMatrix[2] = gladiusMatrix[8];
-    cvrMatrix[3] = gladiusMatrix[12];
-    cvrMatrix[4] = gladiusMatrix[1];
-    cvrMatrix[5] = gladiusMatrix[5];
-    cvrMatrix[6] = gladiusMatrix[9];
-    cvrMatrix[7] = gladiusMatrix[13];
-    cvrMatrix[8] = gladiusMatrix[2];
-    cvrMatrix[9] = gladiusMatrix[6];
-    cvrMatrix[10] = gladiusMatrix[10];
-    cvrMatrix[11] = gladiusMatrix[14];
-    cvrMatrix[12] = gladiusMatrix[3];
-    cvrMatrix[13] = gladiusMatrix[7];
-    cvrMatrix[14] = gladiusMatrix[11];
-    cvrMatrix[15] = gladiusMatrix[15];
-    return cvrMatrix;
-  }
-
     var prototype = {
       onUpdate: onUpdate,
       onEntitySpaceChanged: onEntitySpaceChanged,
       onComponentOwnerChanged: onComponentOwnerChanged,
-      onEntityActivationChanged: onEntityActivationChanged,
-      _convertToCVRMatrix : _convertToCVRMatrix
+      onEntityActivationChanged: onEntityActivationChanged
     };
     extend( Light.prototype, prototype );
 

@@ -111,13 +111,9 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     space.add( parentCube );
 
     var task = new engine.FunctionTask( function() {
-      var cubeRotation = new engine.math.Vector3( space.findNamed( "cube" ).findComponent( "Transform" ).rotation );
-      cubeRotation.add([0, space.clock.delta * 0.0003, 0]);
-      space.findNamed( "cube" ).findComponent( "Transform" ).rotation = cubeRotation;
+      space.findNamed( "cube" ).findComponent( "Transform" ).rotation.y += space.clock.delta * 0.0003;
 
-      var cameraRotation = new engine.math.Vector3( space.findNamed( "camera" ).findComponent( "Transform" ).rotation );
-      cameraRotation.add( [0, space.clock.delta * 0.0003, 0] );
-      space.findNamed( "camera" ).findComponent( "Transform" ).rotation = cameraRotation;
+      space.findNamed( "camera" ).findComponent( "Transform" ).rotation.y += space.clock.delta * 0.0003;
     }, {
       tags: ["@update"]
     });
