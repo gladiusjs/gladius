@@ -122,22 +122,25 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       var cubePosition = new engine.math.Vector3( space.findNamed( "cube").findComponent( "Transform").position);
 //      var camera = space.findNamed("camera").findComponent("Camera");
 //      camera.setTarget(cubePosition);
-      if (cubePosition[1] < -1.5){
+
+      var cubeY = cubePosition.y;
+      var cubeX = cubePosition.x;
+      if (cubeY < -1.5){
         var impEvent = new engine.Event('LinearImpulse',{impulse: [getRandom(0,0.1), getRandom(0,1)]});
         impEvent.dispatch(parentCube);
       }
-      if (cubePosition[1] > 1.5){
+      if (cubeY > 1.5){
         var impEvent = new engine.Event('LinearImpulse',{impulse: [getRandom(0,0.1) * -1, getRandom(0, 1) * -1]});
         impEvent.dispatch(parentCube);
       }
-      if (cubePosition[0] < -1.5){
+      if (cubeX < -1.5){
         var impEvent = new engine.Event('LinearImpulse',{impulse: [getRandom(0,1), 0]});
         impEvent.dispatch(parentCube);
 
         var angEvent = new engine.Event('AngularImpulse',{impulse: getRandom(0, 0.1)});
         angEvent.dispatch(parentCube);
       }
-      if (cubePosition[0] > 1.5){
+      if (cubeX > 1.5){
         var impEvent = new engine.Event('LinearImpulse',{impulse: [getRandom(0, 1) * -1, 0]});
         impEvent.dispatch(parentCube);
 
