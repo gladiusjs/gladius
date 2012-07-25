@@ -11103,6 +11103,7 @@ define('matrix/transform-api',['require','common/not-implemented','matrix/m4','m
     var matrix4 = require( "matrix/matrix4-api" )( FLOAT_ARRAY_TYPE );
 
     function compound( transform, t, r, s ) {
+      transform = transform || new M4(matrix4.identity);
 
       if( t ) {
         translate( t, transform );
@@ -11281,17 +11282,21 @@ define('matrix/transform',['require','common/not-implemented','matrix/m4','matri
 
     var Transform = function( arg1, arg2, arg3 ) {
       var argc = arguments.length;
-      if( 1 === argc ) {
+      if( 0 === argc ) {
+        this.buffer = new M4(matrix4.identity);
+      }else if( 1 === argc ) {
         if( arg1 instanceof Transform ||
             arg1 instanceof Matrix4 ) {
           this.buffer = new M4( arg1.buffer );
         } else if( arg1 instanceof M4 ) {
           this.buffer = new M4( arg1 );
         } else {
-          this.buffer = transform.compound( arg1, arg2, arg3 );
+          this.buffer = new M4(matrix4.identity);
+          transform.compound( this.buffer, arg1, arg2, arg3 );
         }
       } else {
-        this.buffer = transform.compound( arg1, arg2, arg3 );
+        this.buffer = new M4(matrix4.identity);
+        transform.compound(this.buffer, arg1, arg2, arg3 );
       }
 
       Object.defineProperties( this, {
@@ -11369,7 +11374,7 @@ define('matrix/transform',['require','common/not-implemented','matrix/m4','matri
     }
 
     function set( t, r, s ) {
-      transform.compound( this.buffer, t, r, s );
+      transform.set( this.buffer, t, r, s );
       this.modified = true;
     }
 
@@ -12000,7 +12005,9 @@ define('core/dependency-scheduler',['require','common/graph'],function ( require
       return undefined;
     }
     var taskId = this._schedule.shift();
-    return this._tasks[taskId];
+    var task = this._tasks[taskId];
+    this.remove( taskId );
+    return task;
   }
   
   function hasNext() {
@@ -12920,6 +12927,7 @@ define('core/function-task',['require','common/guid','when'],function ( require 
       if( task._taskState === T_CANCELLED ) {
         task._runState = R_RESOLVED;
         task._taskState = T_CLOSED;
+        task._scheduler.remove( task.id );
       } else if( task._taskState === T_STARTED ) {
         // Run the task
         result = task._thunk.call( this._context, result );
@@ -12933,22 +12941,22 @@ define('core/function-task',['require','common/guid','when'],function ( require 
           task._deferred.resolve( task.result );
         } else {
           task.result = when( result,
-          // callback
-          function( value ) {
-            task.result = value;
-            task._runState = R_RESOLVED;
-            if( task._taskState === T_STARTED ) {
-              task._scheduler.insert( task, task.id, task._schedule );
+            // callback
+            function( value ) {
+              task.result = value;
+              task._runState = R_RESOLVED;
+              if( task._taskState === T_STARTED ) {
+                task._scheduler.insert( task, task.id, task._schedule );
+              }
+            },
+            // errback
+            function( error ) {
+              task.result = error;
+              task._runState = R_REJECTED;
+              if( task._taskState === T_STARTED ) {
+                task._scheduler.insert( task, task.id, task._schedule );
+              }
             }
-          },
-          // errback
-          function( error ) {
-            task.result = error;
-            task._runState = R_REJECTED;
-            if( task._threadState === T_STARTED ) {
-              task._scheduler.insert( task, task.id, task._schedule );
-            }
-          }
           );
         }
       } else {
@@ -12956,8 +12964,10 @@ define('core/function-task',['require','common/guid','when'],function ( require 
       }
     } catch( exception ) {
       task.result = exception;
+      task._taskState = T_CLOSED;
       task._runState = R_REJECTED;
       task._deferred.reject( exception );
+      console.log( "Task", task.id, ": ", exception.stack );
     }
     
     task._scheduler.current = null;
@@ -14005,22 +14015,51 @@ define('core/components/transform',['require','_math','common/extend','base/comp
     return this._cachedWorldMatrix;
   }
 
+  function computeWorldRotation(){
+    if( this.owner && this.owner.parent &&
+      this.owner.parent.hasComponent( "Transform" ) ) {
+      return math.matrix4.multiply(this.owner.parent.findComponent( "Transform").worldRotation(),
+                                   math.transform.rotate(this._rotation.buffer));
+    }else{
+      return math.transform.rotate(this._rotation.buffer);
+    }
+  }
+
+  function directionToWorld(direction, result) {
+    result = result || new math.V3();
+    var transformedDirection = math.matrix4.multiply(
+      computeWorldRotation.call(this),
+      math.transform.translate( direction ));
+    math.vector3.set(result, transformedDirection[3], transformedDirection[7], transformedDirection[11]);
+    return result;
+  }
+
+  function directionToLocal(direction, result) {
+    result = result || new math.V3();
+    var transformedDirection = math.matrix4.multiply(
+      math.transform.rotate(this._rotation.buffer),
+      math.transform.translate( direction ));
+    math.vector3.set(result, transformedDirection[3], transformedDirection[7], transformedDirection[11]);
+    return result;
+  }
+
   var prototype = {
-      worldMatrix: computeWorldMatrix,
-      localMatrix: computeLocalMatrix,
-      toWorldDirection: undefined,
-      toLocalDirection: undefined,
-      toWorldPoint: undefined,
-      toLocalPoint: undefined,
-      lookAt: undefined,
-      target: undefined,
-      // Direction constants
-      forward: new math.Vector3( 0, 0, 1 ),
-      backward: new math.Vector3( 0, 0, -1 ),
-      left: new math.Vector3( -1, 0, 0 ),
-      right: new math.Vector3( 1, 0, 0 ),
-      up: new math.Vector3( 0, 1, 0 ),
-      down: new math.Vector3( 0, -1, 0 )
+    worldMatrix: computeWorldMatrix,
+    localMatrix: computeLocalMatrix,
+    directionToLocal: directionToLocal,
+    directionToWorld: directionToWorld,
+    worldRotation: computeWorldRotation,
+    toWorldPoint: undefined,
+    toLocalPoint: undefined,
+    lookAt: undefined,
+    target: undefined,
+    // Direction constants
+    forward: new math.Vector3( 0, 0, 1 ),
+    backward: new math.Vector3( 0, 0, -1 ),
+    left: new math.Vector3( -1, 0, 0 ),
+    right: new math.Vector3( 1, 0, 0 ),
+    up: new math.Vector3( 0, 1, 0 ),
+    down: new math.Vector3( 0, -1, 0 )
   };
   extend( Transform.prototype, prototype );
 

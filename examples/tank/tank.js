@@ -3,9 +3,9 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
   require.config({
     baseUrl: "../.."
   });
-  
-  require( 
-    [ "gladius-core", 
+
+  require(
+    [ "gladius-core",
       "gladius-cubicvr",
       "gladius-input" ],
     function( Gladius, cubicvrExtension, inputExtension ) {
@@ -86,7 +86,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
             },
             onfailure: function( error ) {
             }
-          },          
+          },
           {
             type: cubicvr.MaterialDefinition,
             url: "../assets/procedural-material.js" + materialArgs,
@@ -112,7 +112,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         }
       );
 
-  });
+    });
 
   function game( engine, resources ) {
     var math = engine.math;
@@ -134,28 +134,16 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           var transform = space.findNamed( "tank-body" ).findComponent( "Transform" );
           if( controller.states["MoveForward"] ) {
             console.log( this.owner.id, "Move forward!" );
-            var direction = math.transform.translate( [space.clock.delta * 0.001, 0, 0] );
-            var rotation = math.transform.rotate( transform.rotation.buffer );
-            direction = math.matrix4.multiply( rotation, direction );
-            direction = [direction[3], direction[7], direction[11]];
-            transform.position.add( direction );
+            transform.position.add( transform.directionToLocal( [space.clock.delta * 0.001, 0, 0] ) );
           }
           if( controller.states["MoveBackward"] ) {
-            console.log( this.owner.id, "Move backward!" );            
-            var direction = math.transform.translate( [space.clock.delta * -0.001, 0, 0] );
-            var rotation = math.transform.rotate( transform.rotation.buffer );
-            direction = math.matrix4.multiply( rotation, direction );
-            direction = [direction[3], direction[7], direction[11]];
-            transform.position.add( direction );
+            console.log( this.owner.id, "Move backward!" );
+            transform.position.add( transform.directionToLocal( [space.clock.delta * -0.001, 0, 0] ));
           }
           if( controller.states["TurnLeft"] ) {
             if( controller.states["StrafeModifier"] ) {
               console.log( this.owner.id, "Strafe left!" );
-              var direction = math.transform.translate( [0, space.clock.delta * -0.001, 0] );
-              var rotation = math.transform.rotate( transform.rotation.buffer );
-              direction = math.matrix4.multiply( rotation, direction );
-              direction = [direction[3], direction[7], direction[11]];
-              transform.position.add( direction );
+              transform.position.add( transform.directionToLocal( [0, space.clock.delta * -0.001, 0] ));
             } else {
               console.log( this.owner.id, "Turn left!" );
               var rotation = transform.rotation;
@@ -165,11 +153,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           if( controller.states["TurnRight"] ) {
             if( controller.states["StrafeModifier"] ) {
               console.log( this.owner.id, "Strafe right!" );
-              var direction = math.transform.translate( [0, space.clock.delta * 0.001, 0] );
-              var rotation = math.transform.rotate( transform.rotation );
-              direction = math.matrix4.multiply( rotation, direction );
-              direction = [direction[3], direction[7], direction[11]];
-              transform.position.add( direction );
+              transform.position.add( transform.directionToLocal( [0, space.clock.delta * 0.001, 0] ));
             } else {
               console.log( this.owner.id, "Turn right!" );
               var rotation = transform.rotation;
@@ -185,7 +169,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
     // This parent entity will let us adjust the position and orientation of the
     // tank, and handle game logic events
-    space.add( new Entity( "tank", 
+    space.add( new Entity( "tank",
       [
         new engine.core.Transform( [0, 0, 5], [math.TAU/6, 0, 0], [0.5, 0.5, 0.5] ),
         new input.Controller( resources.tankControls ),
