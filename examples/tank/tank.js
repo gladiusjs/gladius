@@ -146,7 +146,6 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
               transform.position.add( transform.directionToLocal( [0, space.clock.delta * -0.001, 0] ));
             } else {
               console.log( this.owner.id, "Turn left!" );
-              var rotation = transform.rotation;
               transform.rotation.add([0, 0, space.clock.delta * -0.001] );
             }
           }
@@ -156,7 +155,6 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
               transform.position.add( transform.directionToLocal( [0, space.clock.delta * 0.001, 0] ));
             } else {
               console.log( this.owner.id, "Turn right!" );
-              var rotation = transform.rotation;
               transform.rotation.add([0, 0, space.clock.delta * 0.001] );
             }
           }
