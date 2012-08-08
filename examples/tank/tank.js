@@ -3,9 +3,9 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
   require.config({
     baseUrl: "../.."
   });
-  
-  require( 
-    [ "gladius-core", 
+
+  require(
+    [ "gladius-core",
       "gladius-cubicvr",
       "gladius-input" ],
     function( Gladius, cubicvrExtension, inputExtension ) {
@@ -150,7 +150,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         }
       );
 
-  });
+    });
 
   function game( engine, resources ) {
     var math = engine.math;
@@ -178,46 +178,28 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           var turretTransform = space.findNamed ("tank-turret").findComponent( "Transform" );
           if( controller.states["MoveForward"] ) {
             console.log( this.owner.id, "Move forward!" );
-            var direction = math.transform.translate( [space.clock.delta * tankMovementSpeed, 0, 0] );
-            var rotation = math.transform.rotate( transform.rotation );
-            direction = math.matrix4.multiply( [direction, rotation] );
-            direction = [direction[12], direction[13], direction[14]];
-            transform.setPosition( math.vector3.add( direction, transform.position ) );
+            transform.position.add( transform.directionToLocal( [space.clock.delta * 0.001, 0, 0] ) );
           }
           if( controller.states["MoveBackward"] ) {
-            console.log( this.owner.id, "Move backward!" );            
-            var direction = math.transform.translate( [space.clock.delta * -tankMovementSpeed, 0, 0] );
-            var rotation = math.transform.rotate( transform.rotation );
-            direction = math.matrix4.multiply( [direction, rotation] );
-            direction = [direction[12], direction[13], direction[14]];
-            transform.setPosition( math.vector3.add( direction, transform.position ) );
+            console.log( this.owner.id, "Move backward!" );
+            transform.position.add( transform.directionToLocal( [space.clock.delta * -0.001, 0, 0] ));
           }
           if( controller.states["TurnLeft"] ) {
             if( controller.states["StrafeModifier"] ) {
               console.log( this.owner.id, "Strafe left!" );
-              var direction = math.transform.translate( [0, space.clock.delta * -tankMovementSpeed, 0] );
-              var rotation = math.transform.rotate( transform.rotation );
-              direction = math.matrix4.multiply( [direction, rotation] );
-              direction = [direction[12], direction[13], direction[14]];
-              transform.setPosition( math.vector3.add( direction, transform.position ) );              
+              transform.position.add( transform.directionToLocal( [0, space.clock.delta * -0.001, 0] ));
             } else {
               console.log( this.owner.id, "Turn left!" );
-              var rotation = transform.rotation;
-              transform.setRotation( math.vector3.add( rotation, [0, 0, space.clock.delta * -tankRotationSpeed] ) );
+              transform.rotation.add([0, 0, space.clock.delta * -0.001] );
             }
           }
           if( controller.states["TurnRight"] ) {
             if( controller.states["StrafeModifier"] ) {
               console.log( this.owner.id, "Strafe right!" );
-              var direction = math.transform.translate( [0, space.clock.delta * tankMovementSpeed, 0] );
-              var rotation = math.transform.rotate( transform.rotation );
-              direction = math.matrix4.multiply( [direction, rotation] );
-              direction = [direction[12], direction[13], direction[14]];
-              transform.setPosition( math.vector3.add( direction, transform.position ) );   
+              transform.position.add( transform.directionToLocal( [0, space.clock.delta * 0.001, 0] ));
             } else {
               console.log( this.owner.id, "Turn right!" );
-              var rotation = transform.rotation;
-              transform.setRotation( math.vector3.add( rotation, [0, 0, space.clock.delta * tankRotationSpeed] ) );
+              transform.rotation.add([0, 0, space.clock.delta * 0.001] );
             }
           }
           if (controller.states["TurnTurretLeft"] ) {
@@ -320,6 +302,22 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         new engine.core.Transform([0,0,5], [0,0,0]),
         new cubicvr.Model(resources.wall, resources.wallMaterial)
       ]
+    ));
+    space.add( new Entity( "tank-turret",
+      [
+        new engine.core.Transform( [-0.2, 0, -0.6] ),
+        new cubicvr.Model( resources.tankTurret, resources.material )
+      ],
+      ["tank"],
+      space.findNamed( "tank-body" )
+    ));
+    space.add( new Entity( "tank-barrel",
+      [
+        new engine.core.Transform( [0.8, 0, 0] ),
+        new cubicvr.Model( resources.tankBarrel, resources.material )
+      ],
+      ["tank"],
+      space.findNamed( "tank-turret" )
     ));
 
     space.add( new Entity( "camera",
