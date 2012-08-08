@@ -32,12 +32,12 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
       var box2dOptions = {
         resolver: {
-          gravity: [0,-0.5]
+          dimensionMap: box2dExtension.services.resolver.service.prototype.DimensionMaps.XY
         }
       };
 
       engine.registerExtension( cubicvrExtension, cubicvrOptions );
-      engine.registerExtension( box2dExtension);//, box2dOptions);
+      engine.registerExtension( box2dExtension, box2dOptions);
 
       var resources = {};
 

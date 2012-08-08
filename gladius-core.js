@@ -14043,13 +14043,18 @@ define('core/components/transform',['require','_math','common/extend','base/comp
     return result;
   }
 
+  function toWorldPoint() {
+    var worldMatrix = computeWorldMatrix.call(this);
+    return [worldMatrix[3], worldMatrix[7], worldMatrix[11]];
+  }
+
   var prototype = {
     worldMatrix: computeWorldMatrix,
     localMatrix: computeLocalMatrix,
     directionToLocal: directionToLocal,
     directionToWorld: directionToWorld,
     worldRotation: computeWorldRotation,
-    toWorldPoint: undefined,
+    toWorldPoint: toWorldPoint,
     toLocalPoint: undefined,
     lookAt: undefined,
     target: undefined,

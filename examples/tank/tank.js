@@ -7,8 +7,9 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
   require(
     [ "gladius-core",
       "gladius-cubicvr",
-      "gladius-input" ],
-    function( Gladius, cubicvrExtension, inputExtension ) {
+      "gladius-input",
+      "gladius-box2d" ],
+    function( Gladius, cubicvrExtension, inputExtension, box2dExtension ) {
 
       var engine = new Gladius();
 
@@ -36,10 +37,17 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         }
       }
       engine.registerExtension( inputExtension, inputOptions );
+      //Need to find a way to make this property access longer :)
+      engine.registerExtension( box2dExtension, {resolver: {dimensionMap: box2dExtension.services.resolver.service.prototype.DimensionMaps.XZ}});
 
       var cubicvr = engine.findExtension( "gladius-cubicvr" );
       var input = engine.findExtension( "gladius-input" );
+      var box2d = engine.findExtension( "gladius-box2d" );
       var resources = {};
+
+      var bulletMaterialArgs = '?colorTexture=../assets/images/cube-diffuse.jpg' +
+        '&bumpTexture=../assets/images/cube-bump.jpg' +
+        '&normalTexture=../assets/images/cube-normal.jpg';
 
       var materialArgs = '?colorTexture=../assets/images/tank-diffuse.jpg' +
         '&bumpTexture=../assets/images/tank-bump.jpg' +
@@ -106,6 +114,16 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
             }
           },
           {
+            type: cubicvr.Mesh,
+            url: "../assets/procedural-prism.js?length=0.5&width=0.5&depth=0.5",
+            load: engine.loaders.procedural,
+            onsuccess: function( mesh ) {
+              resources.bullet = mesh;
+            },
+            onfailure: function( error ) {
+            }
+          },
+          {
             type: cubicvr.MaterialDefinition,
             url: "../assets/procedural-material.js" + materialArgs,
             load: engine.loaders.procedural,
@@ -136,6 +154,16 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
             }
           },
           {
+            type: cubicvr.MaterialDefinition,
+            url: "../assets/procedural-material.js" + bulletMaterialArgs,
+            load: engine.loaders.procedural,
+            onsuccess: function( material ) {
+              resources.bulletMaterial = material;
+            },
+            onfailure: function( error ) {
+            }
+          },
+          {
             type: input.Map,
             url: "tank-controls.json",
             onsuccess: function( inputMap ) {
@@ -157,6 +185,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     var space = new engine.SimulationSpace();
     var cubicvr = engine.findExtension( "gladius-cubicvr" );
     var input = engine.findExtension( "gladius-input" );
+    var box2d = engine.findExtension( "gladius-box2d" );
     var Entity = engine.Entity;
 
     var tankMovementSpeed = 0.003;
@@ -178,44 +207,50 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           var turretTransform = space.findNamed ("tank-turret").findComponent( "Transform" );
           if( controller.states["MoveForward"] ) {
             console.log( this.owner.id, "Move forward!" );
-            transform.position.add( transform.directionToLocal( [space.clock.delta * 0.001, 0, 0] ) );
+            transform.position.add( transform.directionToLocal( [space.clock.delta * tankMovementSpeed, 0, 0] ) );
           }
           if( controller.states["MoveBackward"] ) {
             console.log( this.owner.id, "Move backward!" );
-            transform.position.add( transform.directionToLocal( [space.clock.delta * -0.001, 0, 0] ));
+            transform.position.add( transform.directionToLocal( [space.clock.delta * -tankMovementSpeed, 0, 0] ));
           }
           if( controller.states["TurnLeft"] ) {
             if( controller.states["StrafeModifier"] ) {
               console.log( this.owner.id, "Strafe left!" );
-              transform.position.add( transform.directionToLocal( [0, space.clock.delta * -0.001, 0] ));
+              transform.position.add( transform.directionToLocal( [0, space.clock.delta * -tankMovementSpeed, 0] ));
             } else {
               console.log( this.owner.id, "Turn left!" );
-              transform.rotation.add([0, 0, space.clock.delta * -0.001] );
+              transform.rotation.add([0, 0, space.clock.delta * -tankRotationSpeed] );
             }
           }
           if( controller.states["TurnRight"] ) {
             if( controller.states["StrafeModifier"] ) {
               console.log( this.owner.id, "Strafe right!" );
-              transform.position.add( transform.directionToLocal( [0, space.clock.delta * 0.001, 0] ));
+              transform.position.add( transform.directionToLocal( [0, space.clock.delta * tankMovementSpeed, 0] ));
             } else {
               console.log( this.owner.id, "Turn right!" );
-              transform.rotation.add([0, 0, space.clock.delta * 0.001] );
+              transform.rotation.add([0, 0, space.clock.delta * tankRotationSpeed] );
             }
           }
           if (controller.states["TurnTurretLeft"] ) {
             console.log( this.owner.id, "Turret turn left!" );
-            var rotation = turretTransform.rotation;
-            turretTransform.setRotation( math.vector3.add( rotation, [0, 0, space.clock.delta * -turretRotationSpeed] ) );
+            turretTransform.rotation.add([0, 0, space.clock.delta * -turretRotationSpeed]);
           }
           if (controller.states["TurnTurretRight"] ) {
             console.log( this.owner.id, "Turret turn right!" );
-            var rotation = turretTransform.rotation;
-            turretTransform.setRotation( math.vector3.add( rotation, [0, 0, space.clock.delta * turretRotationSpeed] ) );
+            turretTransform.rotation.add([0, 0, space.clock.delta * turretRotationSpeed]);
           }
         }
       },
       "Fire": function( event ) {
         console.log( this.owner.id, "Fire!" );
+        space.add(new Entity("bullet",
+          [
+            new engine.core.Transform(space.findNamed ("tank-barrel").findComponent( "Transform").toWorldPoint()),
+            new cubicvr.Model(resources.bullet, resources.bulletMaterial),
+            new box2d.Body({bodyDefinition: new box2d.BodyDefinition(),
+              fixtureDefinition: new box2d.FixtureDefinition({shape:new box2d.BoxShape(0.5, 0.5)})})
+          ]
+        ));
       }
     };
 
@@ -225,7 +260,6 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       space.add(new Entity(name,
         [
           new engine.core.Transform(position, [math.TAU / 4, 0, 0], [0.5, 0.5, 0.5]),
-          new input.Controller(resources.tankControls),
           new engine.logic.Actor(tankLogic)
         ],
         [name]
@@ -277,47 +311,47 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     createTank("tank", [-4,0,-4], resources.material, true);
     createTank("red-tank", [4,0,4], resources.redMaterial, false);
 
-    //TODO: Make these walls have tiling textures.
-    // TODO: Add in physics bounding boxes for them
+    //TODO: Make these walls have tiling textures
+    //TODO: Add in physics bounding boxes for them
+    var bodyDefinition = new box2d.BodyDefinition({type:box2d.BodyDefinition.BodyTypes.STATIC});
+    var fixtureDefinition = new box2d.FixtureDefinition({shape:new box2d.BoxShape(10,1)});
+
+    var body = new box2d.Body({bodyDefinition: bodyDefinition, fixtureDefinition: fixtureDefinition});
+
+    body.onContactBegin = function(event){
+      console.log("First cube number " + cubeIndex + " contact begin");
+    };
+    body.onContactEnd = function(event){
+      console.log("First cube number " + cubeIndex + " contact end");
+    };
+
     space.add( new Entity( "wallLeft",
       [
         new engine.core.Transform([-5,0,0], [0,math.TAU/4,0]),
-        new cubicvr.Model(resources.wall, resources.wallMaterial)
+        new cubicvr.Model(resources.wall, resources.wallMaterial),
+        new box2d.Body({bodyDefinition: bodyDefinition, fixtureDefinition: fixtureDefinition})
       ]
     ));
     space.add( new Entity( "wallRight",
       [
         new engine.core.Transform([5,0,0], [0,math.TAU/4,0]),
-        new cubicvr.Model(resources.wall, resources.wallMaterial)
+        new cubicvr.Model(resources.wall, resources.wallMaterial),
+        new box2d.Body({bodyDefinition: bodyDefinition, fixtureDefinition: fixtureDefinition})
       ]
     ));
     space.add( new Entity( "wallTop",
       [
         new engine.core.Transform([0,0,-5], [0,0,0]),
-        new cubicvr.Model(resources.wall, resources.wallMaterial)
+        new cubicvr.Model(resources.wall, resources.wallMaterial),
+        new box2d.Body({bodyDefinition: bodyDefinition, fixtureDefinition: fixtureDefinition})
       ]
     ));
     space.add( new Entity( "wallBottom",
       [
         new engine.core.Transform([0,0,5], [0,0,0]),
-        new cubicvr.Model(resources.wall, resources.wallMaterial)
+        new cubicvr.Model(resources.wall, resources.wallMaterial),
+        new box2d.Body({bodyDefinition: bodyDefinition, fixtureDefinition: fixtureDefinition})
       ]
-    ));
-    space.add( new Entity( "tank-turret",
-      [
-        new engine.core.Transform( [-0.2, 0, -0.6] ),
-        new cubicvr.Model( resources.tankTurret, resources.material )
-      ],
-      ["tank"],
-      space.findNamed( "tank-body" )
-    ));
-    space.add( new Entity( "tank-barrel",
-      [
-        new engine.core.Transform( [0.8, 0, 0] ),
-        new cubicvr.Model( resources.tankBarrel, resources.material )
-      ],
-      ["tank"],
-      space.findNamed( "tank-turret" )
     ));
 
     space.add( new Entity( "camera",
@@ -328,11 +362,6 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       ]
     ));
     // space.findNamed( "camera" ).findComponent( "Camera" ).setTarget( 0, 0, 0 );
-
-    var task = new engine.FunctionTask( function() {
-    }, {
-      tags: ["@update"]
-    }).start();
 
     engine.resume();
   }
