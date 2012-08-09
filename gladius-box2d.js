@@ -99613,7 +99613,6 @@ define('src/services/resolver',['require','base/service','core/event','_math','b
     };
     Service.call( this, scheduler, schedules );
 
-    options.gravity = options.gravity || [0, 0];
     this.gravity = new Box2D.b2Vec2();
     this.world = new Box2D.b2World( this.gravity );
     this.dimensionMap = options.dimensionMap || 0;
@@ -99866,7 +99865,6 @@ define('src/components/body',['require','box2d','common/extend','base/component'
   Body.prototype.constructor = Body;
 
   var linearImpulse = new Box2D.b2Vec2( 0, 0 );
-
   function onLinearImpulse( event ) {
     var impulse = event.data.impulse;
     linearImpulse.Set( impulse[0], impulse[1] );
@@ -100098,8 +100096,8 @@ if ( typeof define !== "function" ) {
 define('src/resources/box-shape',['require','box2d'],function ( require ) {
   require( "box2d" );
   var BoxShape = function( hx, hy ) {
-    hx = hx || 1;
-    hy = hy || 1;
+    hx = hx/2 || 0.5;
+    hy = hy/2 || 0.5;
     var box2dPolygonShape = new Box2D.b2PolygonShape();
     box2dPolygonShape._gladius = {};
     box2dPolygonShape.SetAsBox( hx, hy );

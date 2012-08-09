@@ -243,14 +243,19 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       },
       "Fire": function( event ) {
         console.log( this.owner.id, "Fire!" );
-        space.add(new Entity("bullet",
+        var newBullet = new Entity("bullet",
           [
             new engine.core.Transform(space.findNamed ("tank-barrel").findComponent( "Transform").toWorldPoint()),
             new cubicvr.Model(resources.bullet, resources.bulletMaterial),
             new box2d.Body({bodyDefinition: new box2d.BodyDefinition(),
               fixtureDefinition: new box2d.FixtureDefinition({shape:new box2d.BoxShape(0.5, 0.5)})})
           ]
-        ));
+        );
+        space.add(newBullet);
+        var bulletVelocity = [3,0,0];
+        space.findNamed("tank-barrel").findComponent( "Transform").directionToWorld(bulletVelocity, bulletVelocity);
+        var impEvent = new engine.Event('LinearImpulse',{impulse: [bulletVelocity[0], bulletVelocity[2]]});
+        impEvent.dispatch(newBullet);
       }
     };
 
