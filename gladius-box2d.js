@@ -100105,11 +100105,26 @@ define('src/resources/box-shape',['require','box2d'],function ( require ) {
   };
   return BoxShape;
 });
+
 if ( typeof define !== "function" ) {
   var define = require( "amdefine" )( module );
 }
 
-define('../src/gladius-box2d',['require','base/extension','src/services/resolver','src/components/body','src/components/force','src/resources/body-definition','src/resources/fixture-definition','src/resources/box-shape'],function ( require ) {
+define('src/resources/circle-shape',['require','box2d'],function ( require ) {
+  require( "box2d" );
+  var CircleShape = function( radius ) {
+    var box2dCircleShape = new Box2D.b2CircleShape();
+    box2dCircleShape._gladius = {};
+    box2dCircleShape.set_m_radius(radius);
+    return box2dCircleShape;
+  };
+  return CircleShape;
+});
+if ( typeof define !== "function" ) {
+  var define = require( "amdefine" )( module );
+}
+
+define('../src/gladius-box2d',['require','base/extension','src/services/resolver','src/components/body','src/components/force','src/resources/body-definition','src/resources/fixture-definition','src/resources/box-shape','src/resources/circle-shape'],function ( require ) {
 
   var Extension = require( "base/extension" );
 
@@ -100133,7 +100148,8 @@ define('../src/gladius-box2d',['require','base/extension','src/services/resolver
       resources: {
         "BodyDefinition": require( "src/resources/body-definition" ),
         "FixtureDefinition": require( "src/resources/fixture-definition" ),
-        "BoxShape": require( "src/resources/box-shape" )
+        "BoxShape": require( "src/resources/box-shape" ),
+        "CircleShape": require( "src/resources/circle-shape" )
       }
       
   });

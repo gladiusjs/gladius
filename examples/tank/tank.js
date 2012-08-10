@@ -115,7 +115,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: cubicvr.Mesh,
-            url: "../assets/procedural-prism.js?length=0.5&width=0.5&depth=0.5",
+            url: "../assets/procedural-sphere.js?type=sphere&radius=0.25",
             load: engine.loaders.procedural,
             onsuccess: function( mesh ) {
               resources.bullet = mesh;
@@ -239,7 +239,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         if (space.clock.time - tankFiringInterval > lastBulletTime){
           lastBulletTime = space.clock.time;
           var physicsBody = new box2d.Body({bodyDefinition: new box2d.BodyDefinition(),
-            fixtureDefinition: new box2d.FixtureDefinition({shape:new box2d.BoxShape(0.5, 0.5)})});
+            fixtureDefinition: new box2d.FixtureDefinition({shape:new box2d.CircleShape(0.25)})});
           physicsBody.tankBulletCollisions = 0;
           var newBullet = new Entity("bullet",
             [
