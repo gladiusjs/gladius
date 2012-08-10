@@ -188,6 +188,8 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     var box2d = engine.findExtension( "gladius-box2d" );
     var Entity = engine.Entity;
 
+    var lastBulletTime = 0;
+    var tankFiringInterval = 500;
     var tankMovementSpeed = 0.003;
     var tankRotationSpeed = 0.002;
     var turretRotationSpeed = 0.002;
@@ -206,56 +208,60 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           var transform = space.findNamed( "tank-body" ).findComponent( "Transform" );
           var turretTransform = space.findNamed ("tank-turret").findComponent( "Transform" );
           if( controller.states["MoveForward"] ) {
-            console.log( this.owner.id, "Move forward!" );
             transform.position.add( transform.directionToLocal( [space.clock.delta * tankMovementSpeed, 0, 0] ) );
           }
           if( controller.states["MoveBackward"] ) {
-            console.log( this.owner.id, "Move backward!" );
             transform.position.add( transform.directionToLocal( [space.clock.delta * -tankMovementSpeed, 0, 0] ));
           }
           if( controller.states["TurnLeft"] ) {
             if( controller.states["StrafeModifier"] ) {
-              console.log( this.owner.id, "Strafe left!" );
               transform.position.add( transform.directionToLocal( [0, space.clock.delta * -tankMovementSpeed, 0] ));
             } else {
-              console.log( this.owner.id, "Turn left!" );
               transform.rotation.add([0, 0, space.clock.delta * -tankRotationSpeed] );
             }
           }
           if( controller.states["TurnRight"] ) {
             if( controller.states["StrafeModifier"] ) {
-              console.log( this.owner.id, "Strafe right!" );
               transform.position.add( transform.directionToLocal( [0, space.clock.delta * tankMovementSpeed, 0] ));
             } else {
-              console.log( this.owner.id, "Turn right!" );
               transform.rotation.add([0, 0, space.clock.delta * tankRotationSpeed] );
             }
           }
           if (controller.states["TurnTurretLeft"] ) {
-            console.log( this.owner.id, "Turret turn left!" );
             turretTransform.rotation.add([0, 0, space.clock.delta * -turretRotationSpeed]);
           }
           if (controller.states["TurnTurretRight"] ) {
-            console.log( this.owner.id, "Turret turn right!" );
             turretTransform.rotation.add([0, 0, space.clock.delta * turretRotationSpeed]);
           }
         }
       },
       "Fire": function( event ) {
-        console.log( this.owner.id, "Fire!" );
-        var newBullet = new Entity("bullet",
-          [
-            new engine.core.Transform(space.findNamed ("tank-barrel").findComponent( "Transform").toWorldPoint()),
-            new cubicvr.Model(resources.bullet, resources.bulletMaterial),
-            new box2d.Body({bodyDefinition: new box2d.BodyDefinition(),
-              fixtureDefinition: new box2d.FixtureDefinition({shape:new box2d.BoxShape(0.5, 0.5)})})
-          ]
-        );
-        space.add(newBullet);
-        var bulletVelocity = [3,0,0];
-        space.findNamed("tank-barrel").findComponent( "Transform").directionToWorld(bulletVelocity, bulletVelocity);
-        var impEvent = new engine.Event('LinearImpulse',{impulse: [bulletVelocity[0], bulletVelocity[2]]});
-        impEvent.dispatch(newBullet);
+        if (space.clock.time - tankFiringInterval > lastBulletTime){
+          lastBulletTime = space.clock.time;
+          var physicsBody = new box2d.Body({bodyDefinition: new box2d.BodyDefinition(),
+            fixtureDefinition: new box2d.FixtureDefinition({shape:new box2d.BoxShape(0.5, 0.5)})});
+          physicsBody.tankBulletCollisions = 0;
+          var newBullet = new Entity("bullet",
+            [
+              new engine.core.Transform(space.findNamed ("tank-barrel").findComponent( "Transform").toWorldPoint()),
+              new cubicvr.Model(resources.bullet, resources.bulletMaterial),
+              physicsBody
+            ]
+          );
+          physicsBody.onContactBegin = function(event){
+            this.tankBulletCollisions++;
+            if (this.tankBulletCollisions === 5){
+              //This is how you remove something from the space properly
+              this.owner.setActive(false);
+              space.remove(this.owner);
+            }
+          };
+          space.add(newBullet);
+          var bulletVelocity = [3,0,0];
+          space.findNamed("tank-barrel").findComponent( "Transform").directionToWorld(bulletVelocity, bulletVelocity);
+          var impEvent = new engine.Event('LinearImpulse',{impulse: [bulletVelocity[0], bulletVelocity[2]]});
+          impEvent.dispatch(newBullet);
+        }
       }
     };
 
@@ -322,13 +328,6 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     var fixtureDefinition = new box2d.FixtureDefinition({shape:new box2d.BoxShape(10,1)});
 
     var body = new box2d.Body({bodyDefinition: bodyDefinition, fixtureDefinition: fixtureDefinition});
-
-    body.onContactBegin = function(event){
-      console.log("First cube number " + cubeIndex + " contact begin");
-    };
-    body.onContactEnd = function(event){
-      console.log("First cube number " + cubeIndex + " contact end");
-    };
 
     space.add( new Entity( "wallLeft",
       [
