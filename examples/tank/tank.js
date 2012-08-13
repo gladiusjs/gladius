@@ -193,6 +193,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     var tankMovementSpeed = 3;
     var tankRotationSpeed = 2;
     var turretRotationSpeed = 0.002;
+    var bulletVelocity = [3,0,0];
 
     var tankVelocity = [0,0,0];
     var rotation = 0;
@@ -253,8 +254,12 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       "Fire": function( event ) {
         if (space.clock.time - tankFiringInterval > lastBulletTime){
           lastBulletTime = space.clock.time;
-          var physicsBody = new box2d.Body({bodyDefinition: new box2d.BodyDefinition(),
-            fixtureDefinition: new box2d.FixtureDefinition({shape:new box2d.CircleShape(0.25)})});
+          var physicsBody = new box2d.Body({bodyDefinition: new box2d.BodyDefinition({bullet:true}),
+            fixtureDefinition: new box2d.FixtureDefinition(
+              {
+                shape:new box2d.CircleShape(0.25),
+                friction:0.3
+              })});
           physicsBody.tankBulletCollisions = 0;
           var newBullet = new Entity("bullet",
             [
@@ -272,7 +277,6 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
             }
           };
           space.add(newBullet);
-          var bulletVelocity = [1,0,0];
           space.findNamed("tank-barrel").findComponent( "Transform").directionToWorld(bulletVelocity, bulletVelocity);
           var impEvent = new engine.Event('LinearImpulse',{impulse: [bulletVelocity[0], bulletVelocity[2]]});
           impEvent.dispatch(newBullet);
