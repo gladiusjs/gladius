@@ -65,7 +65,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         [
           {
             type: cubicvr.Mesh,
-            url: "../assets/procedural-prism.js?length=2.0&width=1.0&depth=0.5",
+            url: "../assets/procedural-prism.js?length=1.0&width=0.5&depth=0.25",
             load: engine.loaders.procedural,
             onsuccess: function( mesh ) {
               resources.tankBody = mesh;
@@ -75,7 +75,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: cubicvr.Mesh,
-            url: "../assets/procedural-prism.js?length=1.7&width=0.4&depth=0.7",
+            url: "../assets/procedural-prism.js?length=0.85&width=0.2&depth=0.35",
             load: engine.loaders.procedural,
             onsuccess: function( mesh ) {
               resources.tankTread = mesh;
@@ -85,7 +85,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: cubicvr.Mesh,
-            url: "../assets/procedural-prism.js?length=1.0&width=0.7&depth=0.3",
+            url: "../assets/procedural-prism.js?length=0.5&width=0.35&depth=0.15",
             load: engine.loaders.procedural,
             onsuccess: function( mesh ) {
               resources.tankTurret = mesh;
@@ -95,7 +95,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: cubicvr.Mesh,
-            url: "../assets/procedural-prism.js?length=0.8&width=0.2&depth=0.1",
+            url: "../assets/procedural-prism.js?length=0.4&width=0.1&depth=0.05",
             load: engine.loaders.procedural,
             onsuccess: function( mesh ) {
               resources.tankBarrel = mesh;
@@ -190,9 +190,12 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
     var lastBulletTime = 0;
     var tankFiringInterval = 500;
-    var tankMovementSpeed = 0.003;
-    var tankRotationSpeed = 0.002;
+    var tankMovementSpeed = 3;
+    var tankRotationSpeed = 2;
     var turretRotationSpeed = 0.002;
+
+    var tankVelocity = [0,0,0];
+    var rotation = 0;
 
     var lightDefinition = new cubicvr.LightDefinition({
       intensity: 1.5,
@@ -205,28 +208,40 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       "Update": function( event ) {
         if( this.owner.hasComponent( "Controller" ) ) {
           var controller = this.owner.findComponent( "Controller" );
+          var physBody = this.owner.findComponent( "Body" );
           var transform = space.findNamed( "tank-body" ).findComponent( "Transform" );
           var turretTransform = space.findNamed ("tank-turret").findComponent( "Transform" );
+          tankVelocity[0] = 0;
+          tankVelocity[1] = 0;
+          tankVelocity[2] = 0;
+          rotation = 0;
+
           if( controller.states["MoveForward"] ) {
-            transform.position.add( transform.directionToLocal( [space.clock.delta * tankMovementSpeed, 0, 0] ) );
+//            transform.position.add( transform.directionToLocal(
+//              [space.clock.delta * tankMovementSpeed, 0, 0] ) );
+            tankVelocity[0]+=tankMovementSpeed;
           }
           if( controller.states["MoveBackward"] ) {
-            transform.position.add( transform.directionToLocal( [space.clock.delta * -tankMovementSpeed, 0, 0] ));
+            tankVelocity[0]-=tankMovementSpeed;
           }
+
           if( controller.states["TurnLeft"] ) {
             if( controller.states["StrafeModifier"] ) {
-              transform.position.add( transform.directionToLocal( [0, space.clock.delta * -tankMovementSpeed, 0] ));
+              tankVelocity[2]-=tankMovementSpeed;
             } else {
-              transform.rotation.add([0, 0, space.clock.delta * -tankRotationSpeed] );
+              rotation+=tankRotationSpeed;
             }
           }
           if( controller.states["TurnRight"] ) {
             if( controller.states["StrafeModifier"] ) {
-              transform.position.add( transform.directionToLocal( [0, space.clock.delta * tankMovementSpeed, 0] ));
+              tankVelocity[2]+=tankMovementSpeed;
             } else {
-              transform.rotation.add([0, 0, space.clock.delta * tankRotationSpeed] );
+              rotation-=tankRotationSpeed;
             }
           }
+          transform.directionToWorld(tankVelocity, tankVelocity);
+          physBody.setLinearVelocity(tankVelocity[0],tankVelocity[2]);
+          physBody.setAngularVelocity(rotation);
           if (controller.states["TurnTurretLeft"] ) {
             turretTransform.rotation.add([0, 0, space.clock.delta * -turretRotationSpeed]);
           }
@@ -257,7 +272,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
             }
           };
           space.add(newBullet);
-          var bulletVelocity = [3,0,0];
+          var bulletVelocity = [1,0,0];
           space.findNamed("tank-barrel").findComponent( "Transform").directionToWorld(bulletVelocity, bulletVelocity);
           var impEvent = new engine.Event('LinearImpulse',{impulse: [bulletVelocity[0], bulletVelocity[2]]});
           impEvent.dispatch(newBullet);
@@ -270,8 +285,10 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       // tank, and handle game logic events
       space.add(new Entity(name,
         [
-          new engine.core.Transform(position, [math.TAU / 4, 0, 0], [0.5, 0.5, 0.5]),
-          new engine.logic.Actor(tankLogic)
+          new engine.core.Transform(position, [math.TAU / 4, 0, 0]),
+          new engine.logic.Actor(tankLogic),
+          new box2d.Body({bodyDefinition: new box2d.BodyDefinition(),
+            fixtureDefinition: new box2d.FixtureDefinition({shape:new box2d.BoxShape(1,1)})})
         ],
         [name]
       ));
@@ -288,7 +305,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       ));
       space.add(new Entity(name + "-tread",
         [
-          new engine.core.Transform([0, 0.8, 0]),
+          new engine.core.Transform([0, 0.4, 0]),
           new cubicvr.Model(resources.tankTread, material)
         ],
         [name],
@@ -296,7 +313,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       ));
       space.add(new Entity(name + "-tread",
         [
-          new engine.core.Transform([0, -0.8, 0]),
+          new engine.core.Transform([0, -0.4, 0]),
           new cubicvr.Model(resources.tankTread, material)
         ],
         [name],
@@ -304,7 +321,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       ));
       space.add(new Entity(name+"-turret",
         [
-          new engine.core.Transform([-0.2, 0, -0.6]),
+          new engine.core.Transform([-0.1, 0, -0.3]),
           new cubicvr.Model(resources.tankTurret, material)
         ],
         [name],
@@ -312,7 +329,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       ));
       space.add(new Entity(name + "-barrel",
         [
-          new engine.core.Transform([0.8, 0, 0]),
+          new engine.core.Transform([0.4, 0, 0]),
           new cubicvr.Model(resources.tankBarrel, material)
         ],
         [name],
@@ -323,7 +340,6 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     createTank("red-tank", [4,0,4], resources.redMaterial, false);
 
     //TODO: Make these walls have tiling textures
-    //TODO: Add in physics bounding boxes for them
     var bodyDefinition = new box2d.BodyDefinition({type:box2d.BodyDefinition.BodyTypes.STATIC});
     var fixtureDefinition = new box2d.FixtureDefinition({shape:new box2d.BoxShape(10,1)});
 
