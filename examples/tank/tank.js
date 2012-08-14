@@ -37,6 +37,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         }
       }
       engine.registerExtension( inputExtension, inputOptions );
+
       //Need to find a way to make this property access longer :)
       engine.registerExtension( box2dExtension, {resolver: {dimensionMap: box2dExtension.services.resolver.service.prototype.DimensionMaps.XZ}});
 
@@ -218,8 +219,6 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           rotation = 0;
 
           if( controller.states["MoveForward"] ) {
-//            transform.position.add( transform.directionToLocal(
-//              [space.clock.delta * tankMovementSpeed, 0, 0] ) );
             tankVelocity[0]+=tankMovementSpeed;
           }
           if( controller.states["MoveBackward"] ) {
@@ -261,22 +260,25 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
                 friction:0.3
               })});
           physicsBody.tankBulletCollisions = 0;
+          var barrelTransform = space.findNamed("tank-barrel").findComponent( "Transform");
+          var bulletFiringPoint = math.vector3.add(barrelTransform.toWorldPoint(), barrelTransform.directionToWorld([0.7,0,0]));
           var newBullet = new Entity("bullet",
             [
-              new engine.core.Transform(space.findNamed ("tank-barrel").findComponent( "Transform").toWorldPoint()),
+              new engine.core.Transform(bulletFiringPoint),
               new cubicvr.Model(resources.bullet, resources.bulletMaterial),
               physicsBody
             ]
           );
           physicsBody.onContactBegin = function(event){
             this.tankBulletCollisions++;
-            if (this.tankBulletCollisions === 5){
+            if (this.tankBulletCollisions === 2){
               //This is how you remove something from the space properly
               this.owner.setActive(false);
               space.remove(this.owner);
             }
           };
           space.add(newBullet);
+          bulletVelocity = [3,0,0];
           space.findNamed("tank-barrel").findComponent( "Transform").directionToWorld(bulletVelocity, bulletVelocity);
           var impEvent = new engine.Event('LinearImpulse',{impulse: [bulletVelocity[0], bulletVelocity[2]]});
           impEvent.dispatch(newBullet);
