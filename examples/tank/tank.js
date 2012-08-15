@@ -257,11 +257,22 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
             fixtureDefinition: new box2d.FixtureDefinition(
               {
                 shape:new box2d.CircleShape(0.25),
-                friction:0.3
+                friction:0.1,
+                //restitution determines the elasticity of collisions
+                //0 = inelastic, 1 = completely elastic, >1 = very high velocities
+                restitution:0.7,
+                //The collision filters here are defined using bitwise masking.
+                //Please see http://www.box2d.org/manual.html#_Toc258082972 for more details
+                //In this case the mask of 23 means it'll collide with
+                //tank b, walls, and with bullets from the green tank and the red tank
+                //which are categories 16, 4, 2, and 1
+                //16+4+2+1 = 23
+                //Note that all the component numbers here are and must be powers of 2
+                filter:{categoryBits:2, maskBits:23}
               })});
           physicsBody.tankBulletCollisions = 0;
           var barrelTransform = space.findNamed("tank-barrel").findComponent( "Transform");
-          var bulletFiringPoint = math.vector3.add(barrelTransform.toWorldPoint(), barrelTransform.directionToWorld([0.7,0,0]));
+          var bulletFiringPoint = math.vector3.add(barrelTransform.toWorldPoint(), barrelTransform.directionToWorld([0.3,0,0]));
           var newBullet = new Entity("bullet",
             [
               new engine.core.Transform(bulletFiringPoint),
@@ -271,7 +282,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           );
           physicsBody.onContactBegin = function(event){
             this.tankBulletCollisions++;
-            if (this.tankBulletCollisions === 2){
+            if (this.tankBulletCollisions === 3){
               //This is how you remove something from the space properly
               this.owner.setActive(false);
               space.remove(this.owner);
@@ -286,7 +297,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       }
     };
 
-    function createTank(name, position, material, hasControls) {
+    function createTank(name, position, material, hasControls, collisionCategory) {
 // This parent entity will let us adjust the position and orientation of the
       // tank, and handle game logic events
       space.add(new Entity(name,
@@ -294,7 +305,10 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           new engine.core.Transform(position, [math.TAU / 4, 0, 0]),
           new engine.logic.Actor(tankLogic),
           new box2d.Body({bodyDefinition: new box2d.BodyDefinition(),
-            fixtureDefinition: new box2d.FixtureDefinition({shape:new box2d.BoxShape(1,1)})})
+            fixtureDefinition: new box2d.FixtureDefinition(
+              {shape:new box2d.BoxShape(1,1),
+                filter:{categoryBits:collisionCategory}
+              })})
         ],
         [name]
       ));
@@ -342,12 +356,16 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         space.findNamed(name + "-turret")
       ));
     }
-    createTank("tank", [-4,0,-4], resources.material, true);
-    createTank("red-tank", [4,0,4], resources.redMaterial, false);
+    createTank("tank", [-4,0,-4], resources.material, true, 8);
+    createTank("red-tank", [4,0,4], resources.redMaterial, false, 16);
 
     //TODO: Make these walls have tiling textures
     var bodyDefinition = new box2d.BodyDefinition({type:box2d.BodyDefinition.BodyTypes.STATIC});
-    var fixtureDefinition = new box2d.FixtureDefinition({shape:new box2d.BoxShape(10,1)});
+    var fixtureDefinition = new box2d.FixtureDefinition({
+      shape:new box2d.BoxShape(10,1),
+      filter:{categoryBits:1, maskBits:30},
+      restitution:0.7
+    });
 
     var body = new box2d.Body({bodyDefinition: bodyDefinition, fixtureDefinition: fixtureDefinition});
 
