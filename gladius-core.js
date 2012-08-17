@@ -4490,6 +4490,11 @@ define('vector/vector2-api',['require','common/not-implemented','vector/v2'],fun
       
       return v;
     }
+
+    function distance( v1, v2 ) {
+      return Math.sqrt((v1[0] - v2[0]) * (v1[0] - v2[0]) +
+        (v1[1] - v2[1]) * (v1[1] - v2[1]));
+    }
       
     function dot( v1, v2 ) {
       var r = 0;
@@ -4526,7 +4531,24 @@ define('vector/vector2-api',['require','common/not-implemented','vector/v2'],fun
       
       return Math.sqrt( r );
     }
-    
+
+    function limit(v, max, result){
+      result = result || new V2();
+      var length;
+      length = Math.sqrt( v[0] * v[0] +
+        v[1] * v[1]);
+
+      if (length > max){
+        var ratio = max/length;
+        result[0] = v[0] * ratio;
+        result[1] = v[1] * ratio;
+      }else{
+        result[0] = v[0];
+        result[1] = v[1];
+      }
+      return result;
+    }
+
     function multiply( v, s, result ) {
       result = result || new V2();
       
@@ -4592,11 +4614,11 @@ define('vector/vector2-api',['require','common/not-implemented','vector/v2'],fun
       add: add,
       angle: angle,
       clear: clear,
-      distance: notImplemented,
+      distance: distance,
       dot: dot,
       equal: equal,
       length: length,
-      limit: notImplemented,
+      limit: limit,
       multiply: multiply,              
       negate: negate,
       normalize: normalize,
@@ -4698,6 +4720,16 @@ define('vector/vector2',['require','../../lib/lodash','common/not-implemented','
       return new Vector2( this );
     }
 
+    function distance(arg) {
+      var other;
+      if( arg instanceof Vector2 ) {
+        other = arg.buffer;
+      } else {
+        other = arg;
+      }
+      return vector2.distance(this.buffer, other);
+    }
+
     function dot( arg ) {
       var other;
       if( arg instanceof Vector2 ) {        
@@ -4722,6 +4754,19 @@ define('vector/vector2',['require','../../lib/lodash','common/not-implemented','
 
     function length() {
       return vector2.length( this.buffer );
+    }
+
+    function limit(max, result) {
+      result = result || this;
+      var other;
+      if( result instanceof Vector2 ) {
+        other = result.buffer;
+        result.modified = true;
+      } else {
+        other = result;
+      }
+      vector2.limit(this.buffer, max, other);
+      return result;
     }
 
     function multiply( arg, result ) {
@@ -4806,10 +4851,11 @@ define('vector/vector2',['require','../../lib/lodash','common/not-implemented','
       angle: angle,
       clear: clear,
       clone: clone,
-      distance: notImplemented,
+      distance: distance,
       dot: dot,
       equal: equal,
       length: length,
+      limit: limit,
       multiply: multiply,
       negate: negate,
       normalize: normalize,
@@ -4930,6 +4976,12 @@ define('vector/vector3-api',['require','common/not-implemented','vector/v3'],fun
       return result;
     }
 
+    function distance( v1, v2 ) {
+      return Math.sqrt((v1[0] - v2[0]) * (v1[0] - v2[0]) +
+        (v1[1] - v2[1]) * (v1[1] - v2[1]) +
+        (v1[2] - v2[2]) * (v1[2] - v2[2]));
+    }
+
     function dot( v1, v2 ) {
       return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
     }
@@ -4962,6 +5014,26 @@ define('vector/vector3-api',['require','common/not-implemented','vector/v3'],fun
       r += v[2] * v[2];
       
       return Math.sqrt( r );      
+    }
+
+    function limit(v, max, result){
+      result = result || new V3();
+      var length;
+      length = Math.sqrt( v[0] * v[0] +
+                          v[1] * v[1] +
+                          v[2] * v[2]);
+
+      if (length > max){
+        var ratio = max/length;
+        result[0] = v[0] * ratio;
+        result[1] = v[1] * ratio;
+        result[2] = v[2] * ratio;
+      }else{
+        result[0] = v[0];
+        result[1] = v[1];
+        result[2] = v[2];
+      }
+      return result;
     }
 
     function multiply( v, s, result ) {
@@ -5039,11 +5111,11 @@ define('vector/vector3-api',['require','common/not-implemented','vector/v3'],fun
       angle: angle,
       clear: clear,
       cross: cross,
-      distance: notImplemented,
+      distance: distance,
       dot: dot,
       equal: equal,
       length: length,
-      limit: notImplemented,
+      limit: limit,
       multiply: multiply,
       negate: negate,
       normalize: normalize,
@@ -5165,6 +5237,16 @@ define('vector/vector3',['require','../../lib/lodash','common/not-implemented','
       return this;
     }
 
+    function distance(arg) {
+      var other;
+      if( arg instanceof Vector3 ) {
+        other = arg.buffer;
+      } else {
+        other = arg;
+      }
+      return vector3.distance(this.buffer, other);
+    }
+
     function dot( arg ) {
       var other;
       if( arg instanceof Vector3 ) {        
@@ -5189,6 +5271,19 @@ define('vector/vector3',['require','../../lib/lodash','common/not-implemented','
 
     function length() {
       return vector3.length( this.buffer );
+    }
+
+    function limit(max, result) {
+      result = result || this;
+      var other;
+      if( result instanceof Vector3 ) {
+        other = result.buffer;
+        result.modified = true;
+      } else {
+        other = result;
+      }
+      vector3.limit(this.buffer, max, other);
+      return result;
     }
 
     function multiply( arg, result ) {
@@ -5277,10 +5372,11 @@ define('vector/vector3',['require','../../lib/lodash','common/not-implemented','
       clear: clear,
       clone: clone,
       cross: cross,
-      distance: notImplemented,
+      distance: distance,
       dot: dot,
       equal: equal,
       length: length,
+      limit: limit,
       multiply: multiply,
       negate: negate,
       normalize: normalize,
@@ -5378,6 +5474,13 @@ define('vector/vector4-api',['require','common/not-implemented','vector/v4'],fun
       return v;
     }
 
+    function distance( v1, v2 ) {
+      return Math.sqrt((v1[0] - v2[0]) * (v1[0] - v2[0]) +
+                       (v1[1] - v2[1]) * (v1[1] - v2[1]) +
+                       (v1[2] - v2[2]) * (v1[2] - v2[2]) +
+                       (v1[3] - v2[3]) * (v1[3] - v2[3]));
+    }
+
     function dot( v1, v2 ) {
       return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2] + v1[3] * v2[3];
     }
@@ -5406,13 +5509,35 @@ define('vector/vector4-api',['require','common/not-implemented','vector/v4'],fun
 
     function length( v ) {
       var r = 0;
-      
+
       r += v[0] * v[0];
       r += v[1] * v[1];
       r += v[2] * v[2];
-      r += v[2] * v[2];
-      
-      return Math.sqrt( r );      
+      r += v[3] * v[3];
+
+      return Math.sqrt( r );
+    }
+
+    function limit(v, max, result){
+      result = result || new V4();
+      var length;
+      length = Math.sqrt( v[0] * v[0] +
+                          v[1] * v[1] +
+                          v[2] * v[2] +
+                          v[3] * v[3]);
+      if (length > max){
+        var ratio = max/length;
+        result[0] = v[0] * ratio;
+        result[1] = v[1] * ratio;
+        result[2] = v[2] * ratio;
+        result[3] = v[3] * ratio;
+      }else{
+        result[0] = v[0];
+        result[1] = v[1];
+        result[2] = v[2];
+        result[3] = v[3];
+      }
+      return result;
     }
 
     function multiply( v, s, result ) {
@@ -5496,11 +5621,11 @@ define('vector/vector4-api',['require','common/not-implemented','vector/v4'],fun
       add: add,
       angle: angle,
       clear: clear,
-      distance: notImplemented,
+      distance: distance,
       dot: dot,
       equal: equal,
       length: length,
-      limit: notImplemented,
+      limit: limit,
       multiply: multiply,
       negate: negate,
       normalize: normalize,
@@ -5613,6 +5738,16 @@ define('vector/vector4',['require','../../lib/lodash','common/not-implemented','
       return new Vector4( this );
     }
 
+    function distance(arg) {
+      var other;
+      if( arg instanceof Vector4 ) {
+        other = arg.buffer;
+      } else {
+        other = arg;
+      }
+      return vector4.distance(this.buffer, other);
+    }
+
     function dot( arg ) {
       var other;
       if( arg instanceof Vector4 ) {        
@@ -5637,6 +5772,19 @@ define('vector/vector4',['require','../../lib/lodash','common/not-implemented','
 
     function length() {
       return vector4.length( this.buffer );
+    }
+
+    function limit(max, result) {
+      result = result || this;
+      var other;
+      if( result instanceof Vector4 ) {
+        other = result.buffer;
+        result.modified = true;
+      } else {
+        other = result;
+      }
+      vector4.limit(this.buffer, max, other);
+      return result;
     }
 
     function multiply( arg, result ) {
@@ -5727,10 +5875,11 @@ define('vector/vector4',['require','../../lib/lodash','common/not-implemented','
       angle: angle,
       clear: clear,
       clone: clone,
-      distance: notImplemented,
+      distance: distance,
       dot: dot,
       equal: equal,
       length: length,
+      limit: limit,
       multiply: multiply,
       negate: negate,
       normalize: normalize,

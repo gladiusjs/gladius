@@ -39,7 +39,8 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       engine.registerExtension( inputExtension, inputOptions );
 
       //Need to find a way to make this property access longer :)
-      engine.registerExtension( box2dExtension, {resolver: {dimensionMap: box2dExtension.services.resolver.service.prototype.DimensionMaps.XZ}});
+      engine.registerExtension( box2dExtension,
+        {resolver: {dimensionMap: box2dExtension.services.resolver.service.prototype.DimensionMaps.XZ}});
 
       var cubicvr = engine.findExtension( "gladius-cubicvr" );
       var input = engine.findExtension( "gladius-input" );
@@ -182,6 +183,11 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     });
 
   function game( engine, resources ) {
+    function getRandom(min, max)
+    {
+      return Math.random() * (max - min) + min;
+    }
+
     var math = engine.math;
     var space = new engine.SimulationSpace();
     var cubicvr = engine.findExtension( "gladius-cubicvr" );
@@ -194,6 +200,8 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     var tankMovementSpeed = 3;
     var tankRotationSpeed = 2;
     var turretRotationSpeed = 0.002;
+    var minStunTime = 2;
+    var maxStunTime = 4;
     var bulletVelocity = [3,0,0];
 
     var tankVelocity = [0,0,0];
@@ -298,7 +306,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     };
 
     function createTank(name, position, material, hasControls, collisionCategory) {
-// This parent entity will let us adjust the position and orientation of the
+      // This parent entity will let us adjust the position and orientation of the
       // tank, and handle game logic events
       space.add(new Entity(name,
         [
@@ -356,8 +364,18 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         space.findNamed(name + "-turret")
       ));
     }
-    createTank("tank", [-4,0,-4], resources.material, true, 8);
-    createTank("red-tank", [4,0,4], resources.redMaterial, false, 16);
+    createTank("tank", [-3,0,-3], resources.material, true, 8);
+    createTank("red-tank", [3,0,3], resources.redMaterial, false, 16);
+    var redTank = space.findNamed( "red-tank" );
+    redTank.doneRotation = true;
+    redTank.doneMovement = true;
+    redTank.stunned = false;
+    redTank.findComponent("Body").onContactBegin = function(event){
+      if (!this.owner.stunned){
+        this.owner.stunnedTime = getRandom(minStunTime, maxStunTime);
+        this.owner.stunned = true;
+      }
+    };
 
     //TODO: Make these walls have tiling textures
     var bodyDefinition = new box2d.BodyDefinition({type:box2d.BodyDefinition.BodyTypes.STATIC});
@@ -405,7 +423,73 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         new cubicvr.Light(lightDefinition)
       ]
     ));
-    // space.findNamed( "camera" ).findComponent( "Camera" ).setTarget( 0, 0, 0 );
+
+    var task = new engine.FunctionTask( function() {
+      var elapsedTime = space.clock.delta/1000;
+      var redTank = space.findNamed( "red-tank" );
+      var transform = redTank.findComponent("Transform");
+      var position = transform.position;
+      var physicsBody = redTank.findComponent("Body");
+      var greenTank = space.findNamed( "tank" );
+      var greenTransform = greenTank.findComponent("Transform");
+      var turretTransform = space.findNamed("red-tank-turret").findComponent("Transform");
+      if (redTank.stunned){
+        redTank.stunnedTime -= elapsedTime;
+        if (redTank.stunnedTime < 0){
+          redTank.stunned = false;
+          redTank.doneMovement = true;
+        }
+      }
+      if (!redTank.stunned){
+        if (redTank.doneMovement){
+          //Done moving, make up a new destination
+          var newPosition = [];
+          newPosition[0] = getRandom(-3, 3);
+          newPosition[1] = position.y;
+          newPosition[2] = getRandom(-3, 3);
+          var currentRotation = transform.rotation.y * -1;
+          var directionToNewPosition = Math.atan2(newPosition[2] - position.z, newPosition[0] - position.x);
+
+          var changeInDirection = directionToNewPosition - (currentRotation - (Math.floor(currentRotation / math.TAU) * math.TAU));
+          if (changeInDirection > math.PI){
+            changeInDirection = (math.TAU - changeInDirection) * -1;
+          }
+          if (changeInDirection < -math.PI){
+            changeInDirection = (-math.TAU - changeInDirection) * -1;
+          }
+          redTank.timeToRotate = Math.abs(changeInDirection)/tankRotationSpeed;
+          redTank.timeToMove = position.distance(newPosition) / tankMovementSpeed;
+          redTank.rotationDirection = changeInDirection > 0 ? -1 : 1;
+          redTank.doneRotation = false;
+          redTank.doneMovement = false;
+          physicsBody.setAngularVelocity(tankRotationSpeed * redTank.rotationDirection);
+          physicsBody.setLinearVelocity(0,0);
+        }
+        //Rotate until we reach the desired direction
+        if (!redTank.doneRotation){
+          redTank.timeToRotate -= elapsedTime;
+          if (redTank.timeToRotate < 0){
+            redTank.doneRotation = true;
+            redTank.tankVelocity = [tankMovementSpeed, 0, 0];
+            transform.directionToWorld(redTank.tankVelocity, redTank.tankVelocity);
+            physicsBody.setAngularVelocity(0);
+            physicsBody.setLinearVelocity(redTank.tankVelocity[0], redTank.tankVelocity[2]);
+          }
+        }
+        //Move until we reach the desired destination
+        if (redTank.doneRotation){
+          redTank.timeToMove -= elapsedTime;
+          if (redTank.timeToMove < 0){
+            redTank.doneMovement = true;
+            physicsBody.setLinearVelocity(0,0);
+          }
+        }
+      }
+
+    }, {
+      tags: ["@update"]
+    });
+    task.start();
 
     engine.resume();
   }
