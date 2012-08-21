@@ -67,7 +67,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         [
           {
             type: cubicvr.Mesh,
-            url: "../assets/procedural-prism.js?length=1.0&width=0.5&depth=0.25",
+            url: "../assets/procedural-prism.js?length=1.0&width=0.25&depth=0.5",
             load: engine.loaders.procedural,
             onsuccess: function( mesh ) {
               resources.tankBody = mesh;
@@ -77,7 +77,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: cubicvr.Mesh,
-            url: "../assets/procedural-prism.js?length=0.85&width=0.2&depth=0.35",
+            url: "../assets/procedural-prism.js?length=0.85&width=0.35&depth=0.2",
             load: engine.loaders.procedural,
             onsuccess: function( mesh ) {
               resources.tankTread = mesh;
@@ -87,7 +87,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: cubicvr.Mesh,
-            url: "../assets/procedural-prism.js?length=0.5&width=0.35&depth=0.15",
+            url: "../assets/procedural-prism.js?length=0.5&width=0.15&depth=0.35",
             load: engine.loaders.procedural,
             onsuccess: function( mesh ) {
               resources.tankTurret = mesh;
@@ -97,7 +97,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: cubicvr.Mesh,
-            url: "../assets/procedural-prism.js?length=0.4&width=0.1&depth=0.05",
+            url: "../assets/procedural-prism.js?length=0.4&width=0.05&depth=0.1",
             load: engine.loaders.procedural,
             onsuccess: function( mesh ) {
               resources.tankBarrel = mesh;
@@ -196,12 +196,17 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     var Entity = engine.Entity;
 
     var lastBulletTime = 0;
+    var lastRedBulletTime = 0;
     var tankFiringInterval = 500;
+    var redTankFiringInterval = 1000;
     var tankMovementSpeed = 3;
     var tankRotationSpeed = 2;
-    var turretRotationSpeed = 0.002;
-    var minStunTime = 2;
-    var maxStunTime = 4;
+    var greenTankTurretRotationSpeed = 2;
+    var redTankTurretRotationSpeed = 1.1;
+    var minRedTankStunTime = 1;
+    var maxRedTankStunTime = 2.25;
+    var minGreenTankStunTime = 0.5;
+    var maxGreenTankStunTime = 1;
     var bulletVelocity = [3,0,0];
 
     var tankVelocity = [0,0,0];
@@ -219,47 +224,58 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         if( this.owner.hasComponent( "Controller" ) ) {
           var controller = this.owner.findComponent( "Controller" );
           var physBody = this.owner.findComponent( "Body" );
-          var transform = space.findNamed( "tank-body" ).findComponent( "Transform" );
+          var greenTank = space.findNamed( "tank" );
+          var transform = greenTank.findComponent( "Transform" );
           var turretTransform = space.findNamed ("tank-turret").findComponent( "Transform" );
+          var elapsedTime = space.clock.delta/1000;
           tankVelocity[0] = 0;
           tankVelocity[1] = 0;
           tankVelocity[2] = 0;
           rotation = 0;
 
-          if( controller.states["MoveForward"] ) {
-            tankVelocity[0]+=tankMovementSpeed;
-          }
-          if( controller.states["MoveBackward"] ) {
-            tankVelocity[0]-=tankMovementSpeed;
-          }
+          if (greenTank.stunned){
+            greenTank.stunnedTime -= elapsedTime;
+            if (greenTank.stunnedTime < 0){
+              greenTank.stunned = false;
+            }else{
+              turretTransform.rotation.y += greenTank.stunnedTurretRotationSpeed * elapsedTime * greenTank.stunnedTurretRotationDirection;
+            }
+          }else{
 
-          if( controller.states["TurnLeft"] ) {
-            if( controller.states["StrafeModifier"] ) {
-              tankVelocity[2]-=tankMovementSpeed;
-            } else {
-              rotation+=tankRotationSpeed;
+            if( controller.states["MoveForward"] ) {
+              tankVelocity[0]+=tankMovementSpeed;
             }
-          }
-          if( controller.states["TurnRight"] ) {
-            if( controller.states["StrafeModifier"] ) {
-              tankVelocity[2]+=tankMovementSpeed;
-            } else {
-              rotation-=tankRotationSpeed;
+            if( controller.states["MoveBackward"] ) {
+              tankVelocity[0]-=tankMovementSpeed;
             }
-          }
-          transform.directionToWorld(tankVelocity, tankVelocity);
-          physBody.setLinearVelocity(tankVelocity[0],tankVelocity[2]);
-          physBody.setAngularVelocity(rotation);
-          if (controller.states["TurnTurretLeft"] ) {
-            turretTransform.rotation.add([0, 0, space.clock.delta * -turretRotationSpeed]);
-          }
-          if (controller.states["TurnTurretRight"] ) {
-            turretTransform.rotation.add([0, 0, space.clock.delta * turretRotationSpeed]);
+            if( controller.states["TurnLeft"] ) {
+              if( controller.states["StrafeModifier"] ) {
+                tankVelocity[2]-=tankMovementSpeed;
+              } else {
+                rotation+=tankRotationSpeed;
+              }
+            }
+            if( controller.states["TurnRight"] ) {
+              if( controller.states["StrafeModifier"] ) {
+                tankVelocity[2]+=tankMovementSpeed;
+              } else {
+                rotation-=tankRotationSpeed;
+              }
+            }
+            transform.directionToWorld(tankVelocity, tankVelocity);
+            physBody.setLinearVelocity(tankVelocity[0],tankVelocity[2]);
+            physBody.setAngularVelocity(rotation);
+            if (controller.states["TurnTurretLeft"] ) {
+              turretTransform.rotation.add([0, (space.clock.delta/1000) * greenTankTurretRotationSpeed, 0]);
+            }
+            if (controller.states["TurnTurretRight"] ) {
+              turretTransform.rotation.add([0, (space.clock.delta/1000) * -greenTankTurretRotationSpeed, 0]);
+            }
           }
         }
       },
       "Fire": function( event ) {
-        if (space.clock.time - tankFiringInterval > lastBulletTime){
+        if (space.clock.time > lastBulletTime + tankFiringInterval){
           lastBulletTime = space.clock.time;
           var physicsBody = new box2d.Body({bodyDefinition: new box2d.BodyDefinition({bullet:true}),
             fixtureDefinition: new box2d.FixtureDefinition(
@@ -310,7 +326,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       // tank, and handle game logic events
       space.add(new Entity(name,
         [
-          new engine.core.Transform(position, [math.TAU / 4, 0, 0]),
+          new engine.core.Transform(position),
           new engine.logic.Actor(tankLogic),
           new box2d.Body({bodyDefinition: new box2d.BodyDefinition(),
             fixtureDefinition: new box2d.FixtureDefinition(
@@ -333,7 +349,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       ));
       space.add(new Entity(name + "-tread",
         [
-          new engine.core.Transform([0, 0.4, 0]),
+          new engine.core.Transform([0, 0, 0.4]),
           new cubicvr.Model(resources.tankTread, material)
         ],
         [name],
@@ -341,7 +357,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       ));
       space.add(new Entity(name + "-tread",
         [
-          new engine.core.Transform([0, -0.4, 0]),
+          new engine.core.Transform([0, 0, -0.4]),
           new cubicvr.Model(resources.tankTread, material)
         ],
         [name],
@@ -349,7 +365,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       ));
       space.add(new Entity(name+"-turret",
         [
-          new engine.core.Transform([-0.1, 0, -0.3]),
+          new engine.core.Transform([-0.1, 0.3, 0]),
           new cubicvr.Model(resources.tankTurret, material)
         ],
         [name],
@@ -365,14 +381,29 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       ));
     }
     createTank("tank", [-3,0,-3], resources.material, true, 8);
-    createTank("red-tank", [3,0,3], resources.redMaterial, false, 16);
+    createTank("red-tank", [1,0,0], resources.redMaterial, false, 16);
     var redTank = space.findNamed( "red-tank" );
     redTank.doneRotation = true;
     redTank.doneMovement = true;
     redTank.stunned = false;
+    redTank.stunnedTurretRotationDirection = -1;
     redTank.findComponent("Body").onContactBegin = function(event){
       if (!this.owner.stunned){
-        this.owner.stunnedTime = getRandom(minStunTime, maxStunTime);
+        this.owner.stunnedTime = getRandom(minRedTankStunTime, maxRedTankStunTime);
+        this.owner.stunnedTurretRotationSpeed = math.TAU / this.owner.stunnedTime;
+        this.owner.stunnedTurretRotationDirection = this.owner.stunnedTurretRotationDirection * -1;
+        this.owner.stunned = true;
+      }
+    };
+
+    var greenTank = space.findNamed( "tank" );
+    greenTank.stunned = false;
+    greenTank.stunnedTurretRotationDirection = -1;
+    greenTank.findComponent("Body").onContactBegin = function(event){
+      if (!this.owner.stunned){
+        this.owner.stunnedTime = getRandom(minGreenTankStunTime, maxGreenTankStunTime);
+        this.owner.stunnedTurretRotationSpeed = math.TAU / this.owner.stunnedTime;
+        this.owner.stunnedTurretRotationDirection = this.owner.stunnedTurretRotationDirection * -1;
         this.owner.stunned = true;
       }
     };
@@ -424,39 +455,112 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       ]
     ));
 
+    var elapsedTime;
+    var redTank = space.findNamed( "red-tank" );
+    var redTankTransform = redTank.findComponent("Transform");
+    var redTankTurret = space.findNamed( "red-tank-turret" );
+    var redTankTurretTransform = redTankTurret.findComponent("Transform");
+    var redTankBarrelTransform = space.findNamed("red-tank-barrel").findComponent("Transform");
+    var position = redTankTransform.position;
+    var physicsBody = redTank.findComponent("Body");
+    var greenTank = space.findNamed( "tank" );
+    var greenTankTransform = greenTank.findComponent("Transform");
+    var newPosition = [];
+    var changeInDirection;
+
+    function removeExcessRotation(rotation){
+      //If the change in direction is greater than 180 degrees then just rotate the other way instead
+      var reducedRotation = (rotation - (Math.floor(rotation / math.TAU) * math.TAU));
+      if (reducedRotation > math.PI){
+        reducedRotation = (math.TAU - reducedRotation) * -1;
+      }else if (reducedRotation < -math.PI){
+        reducedRotation = (-math.TAU - reducedRotation) * -1;
+      }
+      return reducedRotation;
+    }
+
     var task = new engine.FunctionTask( function() {
-      var elapsedTime = space.clock.delta/1000;
-      var redTank = space.findNamed( "red-tank" );
-      var transform = redTank.findComponent("Transform");
-      var position = transform.position;
-      var physicsBody = redTank.findComponent("Body");
-      var greenTank = space.findNamed( "tank" );
-      var greenTransform = greenTank.findComponent("Transform");
-      var turretTransform = space.findNamed("red-tank-turret").findComponent("Transform");
+      elapsedTime = space.clock.delta/1000;
+
       if (redTank.stunned){
         redTank.stunnedTime -= elapsedTime;
         if (redTank.stunnedTime < 0){
           redTank.stunned = false;
           redTank.doneMovement = true;
+        }else{
+          redTankTurretTransform.rotation.y += redTank.stunnedTurretRotationSpeed * elapsedTime * redTank.stunnedTurretRotationDirection;
         }
       }
       if (!redTank.stunned){
+        //Rotate the red turret to point at the green tank
+        var greenTankInRedTankTurretLocalSpace = redTankTurretTransform.transformToLocal(greenTankTransform);
+        //We are multiplying the z coordinate by -1 because Math.atan2 expects (y,x), and up on the screen is negative for z but positive for y
+        var directionOfGreenTank = Math.atan2(greenTankInRedTankTurretLocalSpace[2] * -1, greenTankInRedTankTurretLocalSpace[0]);
+        var currentDirection = redTankTurretTransform.rotation.y;
+        var differenceBetweenDirections = removeExcessRotation(currentDirection - directionOfGreenTank);
+        var newRotation;
+        if (differenceBetweenDirections > 0 && differenceBetweenDirections > (redTankTurretRotationSpeed * elapsedTime)){
+          newRotation = currentDirection - (redTankTurretRotationSpeed * elapsedTime);
+        }else if (differenceBetweenDirections < 0 && (-differenceBetweenDirections) > (redTankTurretRotationSpeed  * elapsedTime)){
+          newRotation = currentDirection + (redTankTurretRotationSpeed * elapsedTime);
+        }else{
+          newRotation = directionOfGreenTank;
+        }
+        redTankTurretTransform.rotation.y = newRotation;
+
+        if (space.clock.time > lastRedBulletTime + redTankFiringInterval){
+          lastRedBulletTime = space.clock.time;
+          var bulletBody = new box2d.Body({bodyDefinition: new box2d.BodyDefinition({bullet:true}),
+            fixtureDefinition: new box2d.FixtureDefinition(
+              {
+                shape:new box2d.CircleShape(0.25),
+                friction:0.1,
+                restitution:0.7,
+                filter:{categoryBits:2, maskBits:15}
+              })});
+          bulletBody.tankBulletCollisions = 0;
+          var bulletFiringPoint = math.vector3.add(redTankBarrelTransform.toWorldPoint(), redTankBarrelTransform.directionToWorld([0.3,0,0]));
+          var newBullet = new Entity("bullet",
+            [
+              new engine.core.Transform(bulletFiringPoint),
+              new cubicvr.Model(resources.bullet, resources.bulletMaterial),
+              bulletBody
+            ]
+          );
+          bulletBody.onContactBegin = function(event){
+            this.tankBulletCollisions++;
+            if (this.tankBulletCollisions === 2){
+              //This is how you remove something from the space properly
+              this.owner.setActive(false);
+              space.remove(this.owner);
+            }
+          };
+          space.add(newBullet);
+          bulletVelocity = [2,0,0];
+          redTankBarrelTransform.directionToWorld(bulletVelocity, bulletVelocity);
+          var impEvent = new engine.Event('LinearImpulse',{impulse: [bulletVelocity[0], bulletVelocity[2]]});
+          impEvent.dispatch(newBullet);
+        }
+
         if (redTank.doneMovement){
           //Done moving, make up a new destination
-          var newPosition = [];
           newPosition[0] = getRandom(-3, 3);
           newPosition[1] = position.y;
           newPosition[2] = getRandom(-3, 3);
-          var currentRotation = transform.rotation.y * -1;
+          //Uncomment this to make bullets appear at the tank's new destination. Useful for debugging
+//          space.add(new Entity("bullet",
+//            [
+//              new engine.core.Transform(newPosition),
+//              new cubicvr.Model(resources.bullet, resources.bulletMaterial)
+//            ]
+//          ));
+
+          var currentRotation = redTankTransform.rotation.y;
           var directionToNewPosition = Math.atan2(newPosition[2] - position.z, newPosition[0] - position.x);
 
-          var changeInDirection = directionToNewPosition - (currentRotation - (Math.floor(currentRotation / math.TAU) * math.TAU));
-          if (changeInDirection > math.PI){
-            changeInDirection = (math.TAU - changeInDirection) * -1;
-          }
-          if (changeInDirection < -math.PI){
-            changeInDirection = (-math.TAU - changeInDirection) * -1;
-          }
+          changeInDirection = removeExcessRotation(directionToNewPosition + currentRotation);
+          //Because we are only telling the tank to stop rotating/moving at the end of a frame, this does NOT result in deterministic movement
+          //The tank will turn/move more or less depending on how high the frame rate is
           redTank.timeToRotate = Math.abs(changeInDirection)/tankRotationSpeed;
           redTank.timeToMove = position.distance(newPosition) / tankMovementSpeed;
           redTank.rotationDirection = changeInDirection > 0 ? -1 : 1;
@@ -471,7 +575,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           if (redTank.timeToRotate < 0){
             redTank.doneRotation = true;
             redTank.tankVelocity = [tankMovementSpeed, 0, 0];
-            transform.directionToWorld(redTank.tankVelocity, redTank.tankVelocity);
+            redTankTransform.directionToWorld(redTank.tankVelocity, redTank.tankVelocity);
             physicsBody.setAngularVelocity(0);
             physicsBody.setLinearVelocity(redTank.tankVelocity[0], redTank.tankVelocity[2]);
           }
