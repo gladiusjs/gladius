@@ -197,7 +197,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
     var lastBulletTime = 0;
     var lastRedBulletTime = 0;
-    var tankFiringInterval = 500;
+    var greenTankFiringInterval = 500;
     var redTankFiringInterval = 1000;
     var tankMovementSpeed = 3;
     var tankRotationSpeed = 2;
@@ -221,61 +221,59 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
     var tankLogic = {
       "Update": function( event ) {
-        if( this.owner.hasComponent( "Controller" ) ) {
+        var elapsedTime = space.clock.delta/1000;
+        var greenTank = space.findNamed( "tank" );
+        var turretTransform = space.findNamed ("tank-turret").findComponent( "Transform" );
+        if (greenTank.stunned){
+          greenTank.stunnedTime -= elapsedTime;
+          if (greenTank.stunnedTime < 0){
+            greenTank.stunned = false;
+          }else{
+            turretTransform.rotation.y += greenTank.stunnedTurretRotationSpeed * elapsedTime * greenTank.stunnedTurretRotationDirection;
+          }
+        }else if( this.owner.hasComponent( "Controller" ) ) {
           var controller = this.owner.findComponent( "Controller" );
           var physBody = this.owner.findComponent( "Body" );
-          var greenTank = space.findNamed( "tank" );
           var transform = greenTank.findComponent( "Transform" );
-          var turretTransform = space.findNamed ("tank-turret").findComponent( "Transform" );
-          var elapsedTime = space.clock.delta/1000;
           tankVelocity[0] = 0;
           tankVelocity[1] = 0;
           tankVelocity[2] = 0;
           rotation = 0;
 
-          if (greenTank.stunned){
-            greenTank.stunnedTime -= elapsedTime;
-            if (greenTank.stunnedTime < 0){
-              greenTank.stunned = false;
-            }else{
-              turretTransform.rotation.y += greenTank.stunnedTurretRotationSpeed * elapsedTime * greenTank.stunnedTurretRotationDirection;
-            }
-          }else{
-
-            if( controller.states["MoveForward"] ) {
-              tankVelocity[0]+=tankMovementSpeed;
-            }
-            if( controller.states["MoveBackward"] ) {
-              tankVelocity[0]-=tankMovementSpeed;
-            }
-            if( controller.states["TurnLeft"] ) {
-              if( controller.states["StrafeModifier"] ) {
-                tankVelocity[2]-=tankMovementSpeed;
-              } else {
-                rotation+=tankRotationSpeed;
-              }
-            }
-            if( controller.states["TurnRight"] ) {
-              if( controller.states["StrafeModifier"] ) {
-                tankVelocity[2]+=tankMovementSpeed;
-              } else {
-                rotation-=tankRotationSpeed;
-              }
-            }
-            transform.directionToWorld(tankVelocity, tankVelocity);
-            physBody.setLinearVelocity(tankVelocity[0],tankVelocity[2]);
-            physBody.setAngularVelocity(rotation);
-            if (controller.states["TurnTurretLeft"] ) {
-              turretTransform.rotation.add([0, (space.clock.delta/1000) * greenTankTurretRotationSpeed, 0]);
-            }
-            if (controller.states["TurnTurretRight"] ) {
-              turretTransform.rotation.add([0, (space.clock.delta/1000) * -greenTankTurretRotationSpeed, 0]);
+          if( controller.states["MoveForward"] ) {
+            tankVelocity[0]+=tankMovementSpeed;
+          }
+          if( controller.states["MoveBackward"] ) {
+            tankVelocity[0]-=tankMovementSpeed;
+          }
+          if( controller.states["TurnLeft"] ) {
+            if( controller.states["StrafeModifier"] ) {
+              tankVelocity[2]-=tankMovementSpeed;
+            } else {
+              rotation+=tankRotationSpeed;
             }
           }
+          if( controller.states["TurnRight"] ) {
+            if( controller.states["StrafeModifier"] ) {
+              tankVelocity[2]+=tankMovementSpeed;
+            } else {
+              rotation-=tankRotationSpeed;
+            }
+          }
+          transform.directionToWorld(tankVelocity, tankVelocity);
+          physBody.setLinearVelocity(tankVelocity[0],tankVelocity[2]);
+          physBody.setAngularVelocity(rotation);
+          if (controller.states["TurnTurretLeft"] ) {
+            turretTransform.rotation.add([0, (space.clock.delta/1000) * greenTankTurretRotationSpeed, 0]);
+          }
+          if (controller.states["TurnTurretRight"] ) {
+            turretTransform.rotation.add([0, (space.clock.delta/1000) * -greenTankTurretRotationSpeed, 0]);
+          }
+
         }
       },
       "Fire": function( event ) {
-        if (space.clock.time > lastBulletTime + tankFiringInterval){
+        if (space.clock.time > lastBulletTime + greenTankFiringInterval){
           lastBulletTime = space.clock.time;
           var physicsBody = new box2d.Body({bodyDefinition: new box2d.BodyDefinition({bullet:true}),
             fixtureDefinition: new box2d.FixtureDefinition(
