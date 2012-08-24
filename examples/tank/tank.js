@@ -260,7 +260,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
               rotation-=tankRotationSpeed;
             }
           }
-          transform.directionToWorld(tankVelocity, tankVelocity);
+          transform.pointToWorld(tankVelocity, tankVelocity);
           physBody.setLinearVelocity(tankVelocity[0],tankVelocity[2]);
           physBody.setAngularVelocity(rotation);
           if (controller.states["TurnTurretLeft"] ) {
@@ -294,7 +294,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
               })});
           physicsBody.tankBulletCollisions = 0;
           var barrelTransform = space.findNamed("tank-barrel").findComponent( "Transform");
-          var bulletFiringPoint = math.vector3.add(barrelTransform.toWorldPoint(), barrelTransform.directionToWorld([0.3,0,0]));
+          var bulletFiringPoint = math.vector3.add(barrelTransform.toWorldPoint(), barrelTransform.pointToWorld([0.3,0,0]));
           var newBullet = new Entity("bullet",
             [
               new engine.core.Transform(bulletFiringPoint),
@@ -312,7 +312,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           };
           space.add(newBullet);
           bulletVelocity = [3,0,0];
-          space.findNamed("tank-barrel").findComponent( "Transform").directionToWorld(bulletVelocity, bulletVelocity);
+          space.findNamed("tank-barrel").findComponent( "Transform").pointToWorld(bulletVelocity, bulletVelocity);
           var impEvent = new engine.Event('LinearImpulse',{impulse: [bulletVelocity[0], bulletVelocity[2]]});
           impEvent.dispatch(newBullet);
         }
@@ -491,7 +491,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       }
       if (!redTank.stunned){
         //Rotate the red turret to point at the green tank
-        var greenTankInRedTankTurretLocalSpace = redTankTurretTransform.transformToLocal(greenTankTransform);
+        var greenTankInRedTankTurretLocalSpace = redTankTurretTransform.relativeTo(greenTankTransform);
         //We are multiplying the z coordinate by -1 because Math.atan2 expects (y,x), and up on the screen is negative for z but positive for y
         var directionOfGreenTank = Math.atan2(greenTankInRedTankTurretLocalSpace[2] * -1, greenTankInRedTankTurretLocalSpace[0]);
         var currentDirection = redTankTurretTransform.rotation.y;
@@ -517,7 +517,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
                 filter:{categoryBits:2, maskBits:15}
               })});
           bulletBody.tankBulletCollisions = 0;
-          var bulletFiringPoint = math.vector3.add(redTankBarrelTransform.toWorldPoint(), redTankBarrelTransform.directionToWorld([0.3,0,0]));
+          var bulletFiringPoint = math.vector3.add(redTankBarrelTransform.toWorldPoint(), redTankBarrelTransform.pointToWorld([0.3,0,0]));
           var newBullet = new Entity("bullet",
             [
               new engine.core.Transform(bulletFiringPoint),
@@ -535,7 +535,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           };
           space.add(newBullet);
           bulletVelocity = [2,0,0];
-          redTankBarrelTransform.directionToWorld(bulletVelocity, bulletVelocity);
+          redTankBarrelTransform.pointToWorld(bulletVelocity, bulletVelocity);
           var impEvent = new engine.Event('LinearImpulse',{impulse: [bulletVelocity[0], bulletVelocity[2]]});
           impEvent.dispatch(newBullet);
         }
@@ -573,7 +573,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           if (redTank.timeToRotate < 0){
             redTank.doneRotation = true;
             redTank.tankVelocity = [tankMovementSpeed, 0, 0];
-            redTankTransform.directionToWorld(redTank.tankVelocity, redTank.tankVelocity);
+            redTankTransform.pointToWorld(redTank.tankVelocity, redTank.tankVelocity);
             physicsBody.setAngularVelocity(0);
             physicsBody.setLinearVelocity(redTank.tankVelocity[0], redTank.tankVelocity[2]);
           }

@@ -14178,21 +14178,9 @@ define('core/components/transform',['require','_math','common/extend','base/comp
     }
   }
 
-  //This calculates the rotation of world space relative to the object
-  //It is wrong!
-  function computeLocalRotation(){
-    //TODO: Add caching of results in here once we have a way of detecting changes in the parents
-    if( this.owner && this.owner.parent &&
-      this.owner.parent.hasComponent( "Transform" ) ) {
-      return math.matrix4.multiply(math.transform.rotate(this._rotation.buffer),
-                                   this.owner.parent.findComponent( "Transform").localRotation());
-    }else{
-      return math.transform.rotate(this._rotation.buffer);
-    }
-  }
-
-  function directionToWorld(direction, result) {
+  function pointToWorld(direction, result) {
     result = result || new math.V3();
+    direction = direction || new math.V3();
     math.matrix4.multiply(
       computeWorldRotation.call(this),
       math.transform.translate( direction ),
@@ -14201,15 +14189,15 @@ define('core/components/transform',['require','_math','common/extend','base/comp
     return result;
   }
 
-  function directionToLocal(direction, result) {
+  function pointToLocal(direction, result) {
     result = result || new math.V3();
     if( this.owner && this.owner.parent &&
       this.owner.parent.hasComponent( "Transform" ) ) {
       var thisParentWorldMatrix = this.owner.parent.findComponent( "Transform").worldMatrix();
       //Multiply the inverse of the parent's world matrix by the other transform's world matrix,
-      // putting the result in thisWorldPositionMatrix
+      // putting the result in the temp matrix
       //Solution grabbed from http://www.macaronikazoo.com/?p=419
-      math.matrix4.multiply(math.matrix4.inverse(thisParentWorldMatrix,this._tempMatrix), math.matrix4.translate(direction), this._tempMatrix);
+      math.matrix4.multiply(math.matrix4.inverse(thisParentWorldMatrix,this._tempMatrix), math.transform.translate(direction), this._tempMatrix);
       //Subtract this turret's position so that everything is offset properly
       math.vector3.set(result, this._tempMatrix[3] - this._position.buffer[0], this._tempMatrix[7] - this._position.buffer[1], this._tempMatrix[11] - this._position.buffer[2]);
     }
@@ -14224,7 +14212,7 @@ define('core/components/transform',['require','_math','common/extend','base/comp
     return [worldMatrix[3], worldMatrix[7], worldMatrix[11]];
   }
 
-  function transformToLocal(otherTransform, result)
+  function relativeTo(otherTransform, result)
   {
     result = result || new math.V3();
     var otherWorldMatrix = otherTransform.worldMatrix();
@@ -14232,7 +14220,7 @@ define('core/components/transform',['require','_math','common/extend','base/comp
       this.owner.parent.hasComponent( "Transform" ) ) {
       var thisParentWorldMatrix = this.owner.parent.findComponent( "Transform").worldMatrix();
       //Multiply the inverse of the parent's world matrix by the other transform's world matrix,
-      // putting the result in thisWorldPositionMatrix
+      // putting the result in the temp matrix
       // Solution grabbed from http://www.macaronikazoo.com/?p=419
       math.matrix4.multiply(math.matrix4.inverse(thisParentWorldMatrix,this._tempMatrix), otherWorldMatrix, this._tempMatrix);
       //Subtract this turret's position so that everything is offset properly
@@ -14248,13 +14236,12 @@ define('core/components/transform',['require','_math','common/extend','base/comp
     //TODO: worldMatrix and localMatrix look like property accessors from the outside but are actually methods. This should be changed, either so that they are accessed like properties or look like methods
     worldMatrix: computeWorldMatrix,
     localMatrix: computeLocalMatrix,
-    directionToLocal: directionToLocal,
-    directionToWorld: directionToWorld,
+    pointToLocal: pointToLocal,
+    pointToWorld: pointToWorld,
     //Same thing goes for this one.
     worldRotation: computeWorldRotation,
-    localRotation: computeLocalRotation,
+    relativeTo: relativeTo,
     toWorldPoint: toWorldPoint,
-    transformToLocal: transformToLocal,
     lookAt: undefined,
     target: undefined,
     // Direction constants
