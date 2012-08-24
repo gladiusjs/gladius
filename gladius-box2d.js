@@ -99613,9 +99613,9 @@ define('src/services/resolver',['require','base/service','core/event','_math','b
     };
     Service.call( this, scheduler, schedules );
 
-    options.gravity = options.gravity || [0, 0];
     this.gravity = new Box2D.b2Vec2();
     this.world = new Box2D.b2World( this.gravity );
+    this.dimensionMap = options.dimensionMap || 0;
     this._timeStep = 30;  // time step, in milliseconds
     this._timeRemaining = 0;    // time remaining from last frame, in milliseconds
 
@@ -99672,6 +99672,12 @@ define('src/services/resolver',['require','base/service','core/event','_math','b
 
   var totalForce = new math.Vector2();
 
+  var DimensionMaps = {
+    XY: 0,
+    XZ: 1,
+    YZ: 2
+  };
+
   function resolve() {
     var component;
 
@@ -99717,6 +99723,7 @@ define('src/services/resolver',['require','base/service','core/event','_math','b
   Resolver.prototype = new Service();
   Resolver.prototype.constructor = Resolver;
   Resolver.prototype.resolve = resolve;
+  Resolver.prototype.DimensionMaps = DimensionMaps;
 
   return Resolver;
 
@@ -99830,6 +99837,8 @@ define('src/components/body',['require','box2d','common/extend','base/component'
     var that = this;
     var i;
 
+    this.service = service;
+
     if( options.bodyDefinition) {
       this.box2dBody = service.world.CreateBody( options.bodyDefinition );
     } else {
@@ -99855,12 +99864,28 @@ define('src/components/body',['require','box2d','common/extend','base/component'
   Body.prototype = new Component();
   Body.prototype.constructor = Body;
 
-  var linearImpulse = new Box2D.b2Vec2( 0, 0 );
+  var b2Vector = new Box2D.b2Vec2( 0, 0 );
+
+  function setAngularVelocity(rotation){
+    this.box2dBody.SetAngularVelocity(rotation);
+  }
+
+  function setLinearVelocity(arg1, arg2) {
+    var argc = arguments.length;
+    if( 1 === argc ) {
+      b2Vector.Set( arg1[0], arg1[1] );
+    }else{
+      b2Vector.Set( arg1, arg2);
+    }
+    this.box2dBody.SetLinearVelocity( b2Vector );
+    b2Vector.Set( 0, 0 );
+  }
+
   function onLinearImpulse( event ) {
     var impulse = event.data.impulse;
-    linearImpulse.Set( impulse[0], impulse[1] );
-    this.box2dBody.ApplyLinearImpulse( linearImpulse, this.box2dBody.GetPosition() );
-    linearImpulse.Set( 0, 0 );
+    b2Vector.Set( impulse[0], impulse[1] );
+    this.box2dBody.ApplyLinearImpulse( b2Vector, this.box2dBody.GetPosition() );
+    b2Vector.Set( 0, 0 );
   }
 
   function onAngularImpulse( event ) {
@@ -99871,11 +99896,19 @@ define('src/components/body',['require','box2d','common/extend','base/component'
     var position2 = this.box2dBody.GetPosition();
     var angle2 = this.box2dBody.GetAngle();
 
-    // TD: This will cause the transform to emit an event that we handle below. Blech!
+
     var transform = this.owner.findComponent( "Transform" );
     //Note: It is currently okay to read from buffers, but writing to them will result in things breaking
-    transform.position = [ position2.get_x(), position2.get_y(), transform.position.buffer[2] ];
-    transform.rotation.z = angle2;
+    if (this.service.dimensionMap === this.service.DimensionMaps.XY){
+      transform.position = [ position2.get_x(), position2.get_y(), transform.position.buffer[2] ];
+      transform.rotation.z = angle2;
+    }else if (this.service.dimensionMap === this.service.DimensionMaps.XZ){
+      transform.position = [ position2.get_x(), transform.position.buffer[1], position2.get_y()];
+      transform.rotation.y = angle2;
+    }else{
+      transform.position = [transform.position.buffer[0], position2.get_y(), position2.get_x()];
+      transform.rotation.x = angle2;
+    }
   }
 
   function onEntitySpaceChanged( event ) {
@@ -99904,7 +99937,13 @@ define('src/components/body',['require','box2d','common/extend','base/component'
     if( this.owner ) {
       var transform = this.owner.findComponent( 'Transform' );
       //Note: It is currently okay to read from buffers, but writing to them will result in things breaking
-      this.box2dBody.SetTransform( new Box2D.b2Vec2( transform.position.buffer[0], transform.position.buffer[1] ), transform.rotation.buffer[2] );
+      if (this.service.dimensionMap === this.service.DimensionMaps.XY){
+        this.box2dBody.SetTransform( new Box2D.b2Vec2( transform.position.buffer[0], transform.position.buffer[1] ), transform.rotation.buffer[2] );
+      }else if (this.service.dimensionMap === this.service.DimensionMaps.XZ){
+        this.box2dBody.SetTransform( new Box2D.b2Vec2( transform.position.buffer[0], transform.position.buffer[2] ), transform.rotation.buffer[1] );
+      }else{
+        this.box2dBody.SetTransform( new Box2D.b2Vec2( transform.position.buffer[2], transform.position.buffer[1] ), transform.rotation.buffer[0] );
+      }
     }
 
     if( this.owner === null && data.previous !== null ) {
@@ -99928,6 +99967,8 @@ define('src/components/body',['require','box2d','common/extend','base/component'
   }
 
   var prototype = {
+    setAngularVelocity: setAngularVelocity,
+    setLinearVelocity: setLinearVelocity,
     onLinearImpulse: onLinearImpulse,
     onAngularImpulse: onAngularImpulse,
     onUpdate: onUpdate,
@@ -100021,6 +100062,8 @@ define('src/resources/body-definition',['require','box2d'],function ( require ) 
 
     var box2dBodyDef = new Box2D.b2BodyDef();
     box2dBodyDef._gladius = {};
+    box2dBodyDef.set_bullet(options.hasOwnProperty( 'bullet' ) ?
+      options.bullet : false);
     box2dBodyDef.set_type( options.hasOwnProperty( 'type' ) ?
       options.type : Box2D.b2_dynamicBody );
     box2dBodyDef.set_linearDamping( options.hasOwnProperty( 'linearDamping' ) ?
@@ -100058,6 +100101,20 @@ define('src/resources/fixture-definition',['require','box2d'],function ( require
     var box2dFixtureDef = new Box2D.b2FixtureDef();
     box2dFixtureDef._gladius = {};
     box2dFixtureDef.set_density( options.hasOwnProperty( 'density' ) ? options.density : 1 );
+    box2dFixtureDef.set_friction( options.hasOwnProperty( 'friction' ) ? options.friction : 0.2);
+    box2dFixtureDef.set_restitution( options.hasOwnProperty( 'restitution' ) ? options.restitution : 0);
+    if (options.hasOwnProperty( 'filter' )){
+      var filter = box2dFixtureDef.get_filter();
+      if (options.filter.hasOwnProperty( 'groupIndex' )){
+        filter.set_groupIndex(options.filter.groupIndex);
+      }
+      if (options.filter.hasOwnProperty( 'categoryBits' )){
+        filter.set_categoryBits(options.filter.categoryBits);
+      }
+      if (options.filter.hasOwnProperty( 'maskBits' )){
+        filter.set_maskBits(options.filter.maskBits);
+      }
+    }
     box2dFixtureDef.set_shape( options.shape );
     return box2dFixtureDef;
   };
@@ -100073,8 +100130,8 @@ if ( typeof define !== "function" ) {
 define('src/resources/box-shape',['require','box2d'],function ( require ) {
   require( "box2d" );
   var BoxShape = function( hx, hy ) {
-    hx = hx || 1;
-    hy = hy || 1;
+    hx = hx/2 || 0.5;
+    hy = hy/2 || 0.5;
     var box2dPolygonShape = new Box2D.b2PolygonShape();
     box2dPolygonShape._gladius = {};
     box2dPolygonShape.SetAsBox( hx, hy );
@@ -100082,11 +100139,26 @@ define('src/resources/box-shape',['require','box2d'],function ( require ) {
   };
   return BoxShape;
 });
+
 if ( typeof define !== "function" ) {
   var define = require( "amdefine" )( module );
 }
 
-define('../src/gladius-box2d',['require','base/extension','src/services/resolver','src/components/body','src/components/force','src/resources/body-definition','src/resources/fixture-definition','src/resources/box-shape'],function ( require ) {
+define('src/resources/circle-shape',['require','box2d'],function ( require ) {
+  require( "box2d" );
+  var CircleShape = function( radius ) {
+    var box2dCircleShape = new Box2D.b2CircleShape();
+    box2dCircleShape._gladius = {};
+    box2dCircleShape.set_m_radius(radius);
+    return box2dCircleShape;
+  };
+  return CircleShape;
+});
+if ( typeof define !== "function" ) {
+  var define = require( "amdefine" )( module );
+}
+
+define('../src/gladius-box2d',['require','base/extension','src/services/resolver','src/components/body','src/components/force','src/resources/body-definition','src/resources/fixture-definition','src/resources/box-shape','src/resources/circle-shape'],function ( require ) {
 
   var Extension = require( "base/extension" );
 
@@ -100110,7 +100182,8 @@ define('../src/gladius-box2d',['require','base/extension','src/services/resolver
       resources: {
         "BodyDefinition": require( "src/resources/body-definition" ),
         "FixtureDefinition": require( "src/resources/fixture-definition" ),
-        "BoxShape": require( "src/resources/box-shape" )
+        "BoxShape": require( "src/resources/box-shape" ),
+        "CircleShape": require( "src/resources/circle-shape" )
       }
       
   });

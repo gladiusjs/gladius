@@ -4490,6 +4490,11 @@ define('vector/vector2-api',['require','common/not-implemented','vector/v2'],fun
       
       return v;
     }
+
+    function distance( v1, v2 ) {
+      return Math.sqrt((v1[0] - v2[0]) * (v1[0] - v2[0]) +
+        (v1[1] - v2[1]) * (v1[1] - v2[1]));
+    }
       
     function dot( v1, v2 ) {
       var r = 0;
@@ -4526,7 +4531,24 @@ define('vector/vector2-api',['require','common/not-implemented','vector/v2'],fun
       
       return Math.sqrt( r );
     }
-    
+
+    function limit(v, max, result){
+      result = result || new V2();
+      var length;
+      length = Math.sqrt( v[0] * v[0] +
+        v[1] * v[1]);
+
+      if (length > max){
+        var ratio = max/length;
+        result[0] = v[0] * ratio;
+        result[1] = v[1] * ratio;
+      }else{
+        result[0] = v[0];
+        result[1] = v[1];
+      }
+      return result;
+    }
+
     function multiply( v, s, result ) {
       result = result || new V2();
       
@@ -4592,11 +4614,11 @@ define('vector/vector2-api',['require','common/not-implemented','vector/v2'],fun
       add: add,
       angle: angle,
       clear: clear,
-      distance: notImplemented,
+      distance: distance,
       dot: dot,
       equal: equal,
       length: length,
-      limit: notImplemented,
+      limit: limit,
       multiply: multiply,              
       negate: negate,
       normalize: normalize,
@@ -4698,6 +4720,16 @@ define('vector/vector2',['require','../../lib/lodash','common/not-implemented','
       return new Vector2( this );
     }
 
+    function distance(arg) {
+      var other;
+      if( arg instanceof Vector2 ) {
+        other = arg.buffer;
+      } else {
+        other = arg;
+      }
+      return vector2.distance(this.buffer, other);
+    }
+
     function dot( arg ) {
       var other;
       if( arg instanceof Vector2 ) {        
@@ -4722,6 +4754,19 @@ define('vector/vector2',['require','../../lib/lodash','common/not-implemented','
 
     function length() {
       return vector2.length( this.buffer );
+    }
+
+    function limit(max, result) {
+      result = result || this;
+      var other;
+      if( result instanceof Vector2 ) {
+        other = result.buffer;
+        result.modified = true;
+      } else {
+        other = result;
+      }
+      vector2.limit(this.buffer, max, other);
+      return result;
     }
 
     function multiply( arg, result ) {
@@ -4806,10 +4851,11 @@ define('vector/vector2',['require','../../lib/lodash','common/not-implemented','
       angle: angle,
       clear: clear,
       clone: clone,
-      distance: notImplemented,
+      distance: distance,
       dot: dot,
       equal: equal,
       length: length,
+      limit: limit,
       multiply: multiply,
       negate: negate,
       normalize: normalize,
@@ -4930,6 +4976,12 @@ define('vector/vector3-api',['require','common/not-implemented','vector/v3'],fun
       return result;
     }
 
+    function distance( v1, v2 ) {
+      return Math.sqrt((v1[0] - v2[0]) * (v1[0] - v2[0]) +
+        (v1[1] - v2[1]) * (v1[1] - v2[1]) +
+        (v1[2] - v2[2]) * (v1[2] - v2[2]));
+    }
+
     function dot( v1, v2 ) {
       return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
     }
@@ -4962,6 +5014,26 @@ define('vector/vector3-api',['require','common/not-implemented','vector/v3'],fun
       r += v[2] * v[2];
       
       return Math.sqrt( r );      
+    }
+
+    function limit(v, max, result){
+      result = result || new V3();
+      var length;
+      length = Math.sqrt( v[0] * v[0] +
+                          v[1] * v[1] +
+                          v[2] * v[2]);
+
+      if (length > max){
+        var ratio = max/length;
+        result[0] = v[0] * ratio;
+        result[1] = v[1] * ratio;
+        result[2] = v[2] * ratio;
+      }else{
+        result[0] = v[0];
+        result[1] = v[1];
+        result[2] = v[2];
+      }
+      return result;
     }
 
     function multiply( v, s, result ) {
@@ -5039,11 +5111,11 @@ define('vector/vector3-api',['require','common/not-implemented','vector/v3'],fun
       angle: angle,
       clear: clear,
       cross: cross,
-      distance: notImplemented,
+      distance: distance,
       dot: dot,
       equal: equal,
       length: length,
-      limit: notImplemented,
+      limit: limit,
       multiply: multiply,
       negate: negate,
       normalize: normalize,
@@ -5165,6 +5237,16 @@ define('vector/vector3',['require','../../lib/lodash','common/not-implemented','
       return this;
     }
 
+    function distance(arg) {
+      var other;
+      if( arg instanceof Vector3 ) {
+        other = arg.buffer;
+      } else {
+        other = arg;
+      }
+      return vector3.distance(this.buffer, other);
+    }
+
     function dot( arg ) {
       var other;
       if( arg instanceof Vector3 ) {        
@@ -5189,6 +5271,19 @@ define('vector/vector3',['require','../../lib/lodash','common/not-implemented','
 
     function length() {
       return vector3.length( this.buffer );
+    }
+
+    function limit(max, result) {
+      result = result || this;
+      var other;
+      if( result instanceof Vector3 ) {
+        other = result.buffer;
+        result.modified = true;
+      } else {
+        other = result;
+      }
+      vector3.limit(this.buffer, max, other);
+      return result;
     }
 
     function multiply( arg, result ) {
@@ -5277,10 +5372,11 @@ define('vector/vector3',['require','../../lib/lodash','common/not-implemented','
       clear: clear,
       clone: clone,
       cross: cross,
-      distance: notImplemented,
+      distance: distance,
       dot: dot,
       equal: equal,
       length: length,
+      limit: limit,
       multiply: multiply,
       negate: negate,
       normalize: normalize,
@@ -5378,6 +5474,13 @@ define('vector/vector4-api',['require','common/not-implemented','vector/v4'],fun
       return v;
     }
 
+    function distance( v1, v2 ) {
+      return Math.sqrt((v1[0] - v2[0]) * (v1[0] - v2[0]) +
+                       (v1[1] - v2[1]) * (v1[1] - v2[1]) +
+                       (v1[2] - v2[2]) * (v1[2] - v2[2]) +
+                       (v1[3] - v2[3]) * (v1[3] - v2[3]));
+    }
+
     function dot( v1, v2 ) {
       return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2] + v1[3] * v2[3];
     }
@@ -5406,13 +5509,35 @@ define('vector/vector4-api',['require','common/not-implemented','vector/v4'],fun
 
     function length( v ) {
       var r = 0;
-      
+
       r += v[0] * v[0];
       r += v[1] * v[1];
       r += v[2] * v[2];
-      r += v[2] * v[2];
-      
-      return Math.sqrt( r );      
+      r += v[3] * v[3];
+
+      return Math.sqrt( r );
+    }
+
+    function limit(v, max, result){
+      result = result || new V4();
+      var length;
+      length = Math.sqrt( v[0] * v[0] +
+                          v[1] * v[1] +
+                          v[2] * v[2] +
+                          v[3] * v[3]);
+      if (length > max){
+        var ratio = max/length;
+        result[0] = v[0] * ratio;
+        result[1] = v[1] * ratio;
+        result[2] = v[2] * ratio;
+        result[3] = v[3] * ratio;
+      }else{
+        result[0] = v[0];
+        result[1] = v[1];
+        result[2] = v[2];
+        result[3] = v[3];
+      }
+      return result;
     }
 
     function multiply( v, s, result ) {
@@ -5496,11 +5621,11 @@ define('vector/vector4-api',['require','common/not-implemented','vector/v4'],fun
       add: add,
       angle: angle,
       clear: clear,
-      distance: notImplemented,
+      distance: distance,
       dot: dot,
       equal: equal,
       length: length,
-      limit: notImplemented,
+      limit: limit,
       multiply: multiply,
       negate: negate,
       normalize: normalize,
@@ -5613,6 +5738,16 @@ define('vector/vector4',['require','../../lib/lodash','common/not-implemented','
       return new Vector4( this );
     }
 
+    function distance(arg) {
+      var other;
+      if( arg instanceof Vector4 ) {
+        other = arg.buffer;
+      } else {
+        other = arg;
+      }
+      return vector4.distance(this.buffer, other);
+    }
+
     function dot( arg ) {
       var other;
       if( arg instanceof Vector4 ) {        
@@ -5637,6 +5772,19 @@ define('vector/vector4',['require','../../lib/lodash','common/not-implemented','
 
     function length() {
       return vector4.length( this.buffer );
+    }
+
+    function limit(max, result) {
+      result = result || this;
+      var other;
+      if( result instanceof Vector4 ) {
+        other = result.buffer;
+        result.modified = true;
+      } else {
+        other = result;
+      }
+      vector4.limit(this.buffer, max, other);
+      return result;
     }
 
     function multiply( arg, result ) {
@@ -5727,10 +5875,11 @@ define('vector/vector4',['require','../../lib/lodash','common/not-implemented','
       angle: angle,
       clear: clear,
       clone: clone,
-      distance: notImplemented,
+      distance: distance,
       dot: dot,
       equal: equal,
       length: length,
+      limit: limit,
       multiply: multiply,
       negate: negate,
       normalize: normalize,
@@ -13953,7 +14102,7 @@ define('core/components/transform',['require','_math','common/extend','base/comp
     this.__defineSetter__( "position", function( value ) {
       this._position.set( value );
       this._cachedLocalMatrixIsValid = false;
-      this._cachedWorldMatrixIsvalid = false;
+      this._cachedWorldMatrixIsValid = false;
     });
 
     // Local rotation
@@ -13964,7 +14113,7 @@ define('core/components/transform',['require','_math','common/extend','base/comp
     this.__defineSetter__( "rotation", function( value ) {
       this._rotation.set( value );
       this._cachedLocalMatrixIsValid = false;
-      this._cachedWorldMatrixIsvalid = false;
+      this._cachedWorldMatrixIsValid = false;
     });
     this._rotationMatrix = new math.transform.rotate( this._rotation );
     this._rotationMatrixIsValid = true;
@@ -13977,13 +14126,15 @@ define('core/components/transform',['require','_math','common/extend','base/comp
     this.__defineSetter__( "scale", function( value ) {
       this._scale.set( value );
       this._cachedLocalMatrixIsValid = false;
-      this._cachedWorldMatrixIsvalid = false;
+      this._cachedWorldMatrixIsValid = false;
     });
 
     this._cachedLocalMatrix = new math.T();
     this._cachedLocalMatrixIsValid = false;
     this._cachedWorldMatrix = new math.T();
-    this._cachedWorldMatrixIsvalid = false;
+    //TODO: Make the world matrix caching actually do something
+    this._cachedWorldMatrixIsValid = false;
+    this._tempMatrix = new math.T();
   };
   Transform.prototype = new Component();
   Transform.prototype.constructor = Transform;
@@ -14015,7 +14166,9 @@ define('core/components/transform',['require','_math','common/extend','base/comp
     return this._cachedWorldMatrix;
   }
 
+  //This calculates the rotation of the object relative to world space
   function computeWorldRotation(){
+    //TODO: Add caching of results in here once we have a way of detecting changes in the parents
     if( this.owner && this.owner.parent &&
       this.owner.parent.hasComponent( "Transform" ) ) {
       return math.matrix4.multiply(this.owner.parent.findComponent( "Transform").worldRotation(),
@@ -14025,32 +14178,76 @@ define('core/components/transform',['require','_math','common/extend','base/comp
     }
   }
 
-  function directionToWorld(direction, result) {
+  //TODO: Should produce a unit vector showing the orientation of things in world space
+  function directionToWorld(){
+
+  }
+
+  function pointToWorld(direction, result) {
     result = result || new math.V3();
-    var transformedDirection = math.matrix4.multiply(
+    direction = direction || new math.V3();
+    math.matrix4.multiply(
       computeWorldRotation.call(this),
-      math.transform.translate( direction ));
-    math.vector3.set(result, transformedDirection[3], transformedDirection[7], transformedDirection[11]);
+      math.transform.translate( direction ),
+      this._tempMatrix);
+    math.vector3.set(result, this._tempMatrix[3], this._tempMatrix[7], this._tempMatrix[11]);
     return result;
   }
 
-  function directionToLocal(direction, result) {
+  function pointToLocal(direction, result) {
     result = result || new math.V3();
-    var transformedDirection = math.matrix4.multiply(
-      math.transform.rotate(this._rotation.buffer),
-      math.transform.translate( direction ));
-    math.vector3.set(result, transformedDirection[3], transformedDirection[7], transformedDirection[11]);
+    if( this.owner && this.owner.parent &&
+      this.owner.parent.hasComponent( "Transform" ) ) {
+      var thisParentWorldMatrix = this.owner.parent.findComponent( "Transform").worldMatrix();
+      //Multiply the inverse of the parent's world matrix by the other transform's world matrix,
+      // putting the result in the temp matrix
+      //Solution grabbed from http://www.macaronikazoo.com/?p=419
+      math.matrix4.multiply(math.matrix4.inverse(thisParentWorldMatrix,this._tempMatrix), math.transform.translate(direction), this._tempMatrix);
+      //Subtract this turret's position so that everything is offset properly
+      math.vector3.set(result, this._tempMatrix[3] - this._position.buffer[0], this._tempMatrix[7] - this._position.buffer[1], this._tempMatrix[11] - this._position.buffer[2]);
+    }
+    else{
+      math.vector3.set(result, direction[0], direction[1], direction[2]);
+    }
+    return result;
+  }
+
+  function toWorldPoint() {
+    var worldMatrix = computeWorldMatrix.call(this);
+    return [worldMatrix[3], worldMatrix[7], worldMatrix[11]];
+  }
+
+  function relativeTo(otherTransform, result)
+  {
+    result = result || new math.V3();
+    var otherWorldMatrix = otherTransform.worldMatrix();
+    if( this.owner && this.owner.parent &&
+      this.owner.parent.hasComponent( "Transform" ) ) {
+      var thisParentWorldMatrix = this.owner.parent.findComponent( "Transform").worldMatrix();
+      //Multiply the inverse of the parent's world matrix by the other transform's world matrix,
+      // putting the result in the temp matrix
+      // Solution grabbed from http://www.macaronikazoo.com/?p=419
+      math.matrix4.multiply(math.matrix4.inverse(thisParentWorldMatrix,this._tempMatrix), otherWorldMatrix, this._tempMatrix);
+      //Subtract this turret's position so that everything is offset properly
+      math.vector3.set(result, this._tempMatrix[3] - this._position.buffer[0], this._tempMatrix[7] - this._position.buffer[1], this._tempMatrix[11] - this._position.buffer[2]);
+    }
+    else{
+      math.vector3.set(result, otherWorldMatrix[3], otherWorldMatrix[7], otherWorldMatrix[11]);
+    }
     return result;
   }
 
   var prototype = {
+    //TODO: worldMatrix and localMatrix look like property accessors from the outside but are actually methods. This should be changed, either so that they are accessed like properties or look like methods
     worldMatrix: computeWorldMatrix,
     localMatrix: computeLocalMatrix,
-    directionToLocal: directionToLocal,
-    directionToWorld: directionToWorld,
+    pointToLocal: pointToLocal,
+    pointToWorld: pointToWorld,
+    directionToWorld: undefined,
+    //Same thing goes for this one.
     worldRotation: computeWorldRotation,
-    toWorldPoint: undefined,
-    toLocalPoint: undefined,
+    relativeTo: relativeTo,
+    toWorldPoint: toWorldPoint,
     lookAt: undefined,
     target: undefined,
     // Direction constants
