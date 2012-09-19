@@ -99615,7 +99615,6 @@ define('src/services/resolver',['require','base/service','core/event','_math','b
 
     this.gravity = new Box2D.b2Vec2();
     this.world = new Box2D.b2World( this.gravity );
-    this.dimensionMap = options.dimensionMap || 0;
     this._timeStep = 30;  // time step, in milliseconds
     this._timeRemaining = 0;    // time remaining from last frame, in milliseconds
 
@@ -99672,12 +99671,6 @@ define('src/services/resolver',['require','base/service','core/event','_math','b
 
   var totalForce = new math.Vector2();
 
-  var DimensionMaps = {
-    XY: 0,
-    XZ: 1,
-    YZ: 2
-  };
-
   function resolve() {
     var component;
 
@@ -99723,7 +99716,6 @@ define('src/services/resolver',['require','base/service','core/event','_math','b
   Resolver.prototype = new Service();
   Resolver.prototype.constructor = Resolver;
   Resolver.prototype.resolve = resolve;
-  Resolver.prototype.DimensionMaps = DimensionMaps;
 
   return Resolver;
 
@@ -99899,16 +99891,8 @@ define('src/components/body',['require','box2d','common/extend','base/component'
 
     var transform = this.owner.findComponent( "Transform" );
     //Note: It is currently okay to read from buffers, but writing to them will result in things breaking
-    if (this.service.dimensionMap === this.service.DimensionMaps.XY){
-      transform.position = [ position2.get_x(), position2.get_y(), transform.position.buffer[2] ];
-      transform.rotation.z = angle2;
-    }else if (this.service.dimensionMap === this.service.DimensionMaps.XZ){
-      transform.position = [ position2.get_x(), transform.position.buffer[1], position2.get_y()];
-      transform.rotation.y = angle2;
-    }else{
-      transform.position = [transform.position.buffer[0], position2.get_y(), position2.get_x()];
-      transform.rotation.x = angle2;
-    }
+    transform.position = [ position2.get_x(), position2.get_y(), transform.position.buffer[2] ];
+    transform.rotation.z = angle2;
   }
 
   function onEntitySpaceChanged( event ) {
@@ -99937,13 +99921,7 @@ define('src/components/body',['require','box2d','common/extend','base/component'
     if( this.owner ) {
       var transform = this.owner.findComponent( 'Transform' );
       //Note: It is currently okay to read from buffers, but writing to them will result in things breaking
-      if (this.service.dimensionMap === this.service.DimensionMaps.XY){
-        this.box2dBody.SetTransform( new Box2D.b2Vec2( transform.position.buffer[0], transform.position.buffer[1] ), transform.rotation.buffer[2] );
-      }else if (this.service.dimensionMap === this.service.DimensionMaps.XZ){
-        this.box2dBody.SetTransform( new Box2D.b2Vec2( transform.position.buffer[0], transform.position.buffer[2] ), transform.rotation.buffer[1] );
-      }else{
-        this.box2dBody.SetTransform( new Box2D.b2Vec2( transform.position.buffer[2], transform.position.buffer[1] ), transform.rotation.buffer[0] );
-      }
+      this.box2dBody.SetTransform( new Box2D.b2Vec2( transform.position.buffer[0], transform.position.buffer[1] ), transform.rotation.buffer[2] );
     }
 
     if( this.owner === null && data.previous !== null ) {

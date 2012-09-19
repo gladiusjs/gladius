@@ -38,9 +38,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       }
       engine.registerExtension( inputExtension, inputOptions );
 
-      //Need to find a way to make this property access longer :)
-      engine.registerExtension( box2dExtension,
-        {resolver: {dimensionMap: box2dExtension.services.resolver.service.prototype.DimensionMaps.XZ}});
+      engine.registerExtension( box2dExtension );
 
       var cubicvr = engine.findExtension( "gladius-cubicvr" );
       var input = engine.findExtension( "gladius-input" );
@@ -67,7 +65,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         [
           {
             type: cubicvr.Mesh,
-            url: "../assets/procedural-prism.js?length=1.0&width=0.25&depth=0.5",
+            url: "../assets/procedural-prism.js?length=1.0&width=0.5&depth=0.25",
             load: engine.loaders.procedural,
             onsuccess: function( mesh ) {
               resources.tankBody = mesh;
@@ -77,7 +75,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: cubicvr.Mesh,
-            url: "../assets/procedural-prism.js?length=0.85&width=0.35&depth=0.2",
+            url: "../assets/procedural-prism.js?length=0.85&width=0.2&depth=0.35",
             load: engine.loaders.procedural,
             onsuccess: function( mesh ) {
               resources.tankTread = mesh;
@@ -87,7 +85,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: cubicvr.Mesh,
-            url: "../assets/procedural-prism.js?length=0.5&width=0.15&depth=0.35",
+            url: "../assets/procedural-prism.js?length=0.5&width=0.35&depth=0.15",
             load: engine.loaders.procedural,
             onsuccess: function( mesh ) {
               resources.tankTurret = mesh;
@@ -97,7 +95,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           },
           {
             type: cubicvr.Mesh,
-            url: "../assets/procedural-prism.js?length=0.4&width=0.05&depth=0.1",
+            url: "../assets/procedural-prism.js?length=0.4&width=0.1&depth=0.05",
             load: engine.loaders.procedural,
             onsuccess: function( mesh ) {
               resources.tankBarrel = mesh;
@@ -229,7 +227,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           if (greenTank.stunnedTime < 0){
             greenTank.stunned = false;
           }else{
-            turretTransform.rotation.y += greenTank.stunnedTurretRotationSpeed * elapsedTime * greenTank.stunnedTurretRotationDirection;
+            turretTransform.rotation.z += greenTank.stunnedTurretRotationSpeed * elapsedTime * greenTank.stunnedTurretRotationDirection;
           }
         }else if( this.owner.hasComponent( "Controller" ) ) {
           var controller = this.owner.findComponent( "Controller" );
@@ -248,20 +246,20 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           }
           if( controller.states["TurnLeft"] ) {
             if( controller.states["StrafeModifier"] ) {
-              tankVelocity[2]-=tankMovementSpeed;
+              tankVelocity[1]-=tankMovementSpeed;
             } else {
               rotation+=tankRotationSpeed;
             }
           }
           if( controller.states["TurnRight"] ) {
             if( controller.states["StrafeModifier"] ) {
-              tankVelocity[2]+=tankMovementSpeed;
+              tankVelocity[1]+=tankMovementSpeed;
             } else {
               rotation-=tankRotationSpeed;
             }
           }
           transform.pointToWorld(tankVelocity, tankVelocity);
-          physBody.setLinearVelocity(tankVelocity[0],tankVelocity[2]);
+          physBody.setLinearVelocity(tankVelocity[0],tankVelocity[1]);
           physBody.setAngularVelocity(rotation);
           if (controller.states["TurnTurretLeft"] ) {
             turretTransform.rotation.add([0, (space.clock.delta/1000) * greenTankTurretRotationSpeed, 0]);
@@ -313,7 +311,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           space.add(newBullet);
           bulletVelocity = [3,0,0];
           space.findNamed("tank-barrel").findComponent( "Transform").pointToWorld(bulletVelocity, bulletVelocity);
-          var impEvent = new engine.Event('LinearImpulse',{impulse: [bulletVelocity[0], bulletVelocity[2]]});
+          var impEvent = new engine.Event('LinearImpulse',{impulse: [bulletVelocity[0], bulletVelocity[1]]});
           impEvent.dispatch(newBullet);
         }
       }
@@ -347,7 +345,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       ));
       space.add(new Entity(name + "-tread",
         [
-          new engine.core.Transform([0, 0, 0.4]),
+          new engine.core.Transform([0, 0.4, 0]),
           new cubicvr.Model(resources.tankTread, material)
         ],
         [name],
@@ -355,7 +353,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       ));
       space.add(new Entity(name + "-tread",
         [
-          new engine.core.Transform([0, 0, -0.4]),
+          new engine.core.Transform([0, -0.4, 0]),
           new cubicvr.Model(resources.tankTread, material)
         ],
         [name],
@@ -363,7 +361,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       ));
       space.add(new Entity(name+"-turret",
         [
-          new engine.core.Transform([-0.1, 0.3, 0]),
+          new engine.core.Transform([-0.1, 0, 0.3]),
           new cubicvr.Model(resources.tankTurret, material)
         ],
         [name],
@@ -378,8 +376,8 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         space.findNamed(name + "-turret")
       ));
     }
-    createTank("tank", [-3,0,-3], resources.material, true, 8);
-    createTank("red-tank", [1,0,0], resources.redMaterial, false, 16);
+    createTank("tank", [-3,-3], resources.material, true, 8);
+    createTank("red-tank", [3,3,0], resources.redMaterial, false, 16);
     var redTank = space.findNamed( "red-tank" );
     redTank.doneRotation = true;
     redTank.doneMovement = true;
@@ -418,28 +416,28 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
     space.add( new Entity( "wallLeft",
       [
-        new engine.core.Transform([-5,0,0], [0,math.TAU/4,0]),
+        new engine.core.Transform([-5,0,0], [0,0,math.TAU/4]),
         new cubicvr.Model(resources.wall, resources.wallMaterial),
         new box2d.Body({bodyDefinition: bodyDefinition, fixtureDefinition: fixtureDefinition})
       ]
     ));
     space.add( new Entity( "wallRight",
       [
-        new engine.core.Transform([5,0,0], [0,math.TAU/4,0]),
+        new engine.core.Transform([5,0,0], [0,0,math.TAU/4]),
         new cubicvr.Model(resources.wall, resources.wallMaterial),
         new box2d.Body({bodyDefinition: bodyDefinition, fixtureDefinition: fixtureDefinition})
       ]
     ));
     space.add( new Entity( "wallTop",
       [
-        new engine.core.Transform([0,0,-5], [0,0,0]),
+        new engine.core.Transform([0,-5,0], [math.TAU/4,0,0]),
         new cubicvr.Model(resources.wall, resources.wallMaterial),
         new box2d.Body({bodyDefinition: bodyDefinition, fixtureDefinition: fixtureDefinition})
       ]
     ));
     space.add( new Entity( "wallBottom",
       [
-        new engine.core.Transform([0,0,5], [0,0,0]),
+        new engine.core.Transform([0,5,0], [math.TAU/4,0,0]),
         new cubicvr.Model(resources.wall, resources.wallMaterial),
         new box2d.Body({bodyDefinition: bodyDefinition, fixtureDefinition: fixtureDefinition})
       ]
@@ -447,7 +445,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
     space.add( new Entity( "camera",
       [
-        new engine.core.Transform( [0, 10, 0], [-math.TAU/4, 0, 0] ),
+        new engine.core.Transform( [0, 0, 10], [0, 0, 0] ),
         new cubicvr.Camera(),
         new cubicvr.Light(lightDefinition)
       ]
@@ -486,15 +484,15 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           redTank.stunned = false;
           redTank.doneMovement = true;
         }else{
-          redTankTurretTransform.rotation.y += redTank.stunnedTurretRotationSpeed * elapsedTime * redTank.stunnedTurretRotationDirection;
+          redTankTurretTransform.rotation.z += redTank.stunnedTurretRotationSpeed * elapsedTime * redTank.stunnedTurretRotationDirection;
         }
       }
       if (!redTank.stunned){
         //Rotate the red turret to point at the green tank
         var greenTankInRedTankTurretLocalSpace = redTankTurretTransform.relativeTo(greenTankTransform);
         //We are multiplying the z coordinate by -1 because Math.atan2 expects (y,x), and up on the screen is negative for z but positive for y
-        var directionOfGreenTank = Math.atan2(greenTankInRedTankTurretLocalSpace[2] * -1, greenTankInRedTankTurretLocalSpace[0]);
-        var currentDirection = redTankTurretTransform.rotation.y;
+        var directionOfGreenTank = Math.atan2(greenTankInRedTankTurretLocalSpace[1] * -1, greenTankInRedTankTurretLocalSpace[0]);
+        var currentDirection = redTankTurretTransform.rotation.z;
         var differenceBetweenDirections = removeExcessRotation(currentDirection - directionOfGreenTank);
         var newRotation;
         if (differenceBetweenDirections > 0 && differenceBetweenDirections > (redTankTurretRotationSpeed * elapsedTime)){
@@ -504,7 +502,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
         }else{
           newRotation = directionOfGreenTank;
         }
-        redTankTurretTransform.rotation.y = newRotation;
+        redTankTurretTransform.rotation.z = newRotation;
 
         if (space.clock.time > lastRedBulletTime + redTankFiringInterval){
           lastRedBulletTime = space.clock.time;
@@ -536,15 +534,15 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           space.add(newBullet);
           bulletVelocity = [2,0,0];
           redTankBarrelTransform.pointToWorld(bulletVelocity, bulletVelocity);
-          var impEvent = new engine.Event('LinearImpulse',{impulse: [bulletVelocity[0], bulletVelocity[2]]});
+          var impEvent = new engine.Event('LinearImpulse',{impulse: [bulletVelocity[0], bulletVelocity[1]]});
           impEvent.dispatch(newBullet);
         }
 
         if (redTank.doneMovement){
           //Done moving, make up a new destination
           newPosition[0] = getRandom(-3, 3);
-          newPosition[1] = position.y;
-          newPosition[2] = getRandom(-3, 3);
+          newPosition[1] = getRandom(-3, 3);
+          newPosition[2] = position.z;
           //Uncomment this to make bullets appear at the tank's new destination. Useful for debugging
 //          space.add(new Entity("bullet",
 //            [
@@ -553,8 +551,8 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 //            ]
 //          ));
 
-          var currentRotation = redTankTransform.rotation.y;
-          var directionToNewPosition = Math.atan2(newPosition[2] - position.z, newPosition[0] - position.x);
+          var currentRotation = redTankTransform.rotation.z;
+          var directionToNewPosition = Math.atan2(newPosition[1] - position.y, newPosition[0] - position.x);
 
           changeInDirection = removeExcessRotation(directionToNewPosition + currentRotation);
           //Because we are only telling the tank to stop rotating/moving at the end of a frame, this does NOT result in deterministic movement
@@ -575,7 +573,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
             redTank.tankVelocity = [tankMovementSpeed, 0, 0];
             redTankTransform.pointToWorld(redTank.tankVelocity, redTank.tankVelocity);
             physicsBody.setAngularVelocity(0);
-            physicsBody.setLinearVelocity(redTank.tankVelocity[0], redTank.tankVelocity[2]);
+            physicsBody.setLinearVelocity(redTank.tankVelocity[0], redTank.tankVelocity[1]);
           }
         }
         //Move until we reach the desired destination
