@@ -262,10 +262,10 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           physBody.setLinearVelocity(tankVelocity[0],tankVelocity[1]);
           physBody.setAngularVelocity(rotation);
           if (controller.states["TurnTurretLeft"] ) {
-            turretTransform.rotation.add([0, (space.clock.delta/1000) * greenTankTurretRotationSpeed, 0]);
+            turretTransform.rotation.add([0, 0, (space.clock.delta/1000) * greenTankTurretRotationSpeed]);
           }
           if (controller.states["TurnTurretRight"] ) {
-            turretTransform.rotation.add([0, (space.clock.delta/1000) * -greenTankTurretRotationSpeed, 0]);
+            turretTransform.rotation.add([0, 0, (space.clock.delta/1000) * -greenTankTurretRotationSpeed]);
           }
 
         }
@@ -543,12 +543,12 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           newPosition[1] = getRandom(-3, 3);
           newPosition[2] = position.z;
           //Uncomment this to make bullets appear at the tank's new destination. Useful for debugging
-          space.add(new Entity("bullet",
-            [
-              new engine.core.Transform(newPosition),
-              new cubicvr.Model(resources.bullet, resources.bulletMaterial)
-            ]
-          ));
+//          space.add(new Entity("bullet",
+//            [
+//              new engine.core.Transform(newPosition),
+//              new cubicvr.Model(resources.bullet, resources.bulletMaterial)
+//            ]
+//          ));
 
           //Multiply by negative 1 due to handedness differences between what atan2 will give us and what rotation.z is
           var currentRotation = redTankTransform.rotation.z * -1;
