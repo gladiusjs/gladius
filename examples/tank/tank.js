@@ -490,8 +490,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       if (!redTank.stunned){
         //Rotate the red turret to point at the green tank
         var greenTankInRedTankTurretLocalSpace = redTankTurretTransform.relativeTo(greenTankTransform);
-        //We are multiplying the z coordinate by -1 because Math.atan2 expects (y,x), and up on the screen is negative for z but positive for y
-        var directionOfGreenTank = Math.atan2(greenTankInRedTankTurretLocalSpace[1] * -1, greenTankInRedTankTurretLocalSpace[0]);
+        var directionOfGreenTank = Math.atan2(greenTankInRedTankTurretLocalSpace[1], greenTankInRedTankTurretLocalSpace[0]);
         var currentDirection = redTankTurretTransform.rotation.z;
         var differenceBetweenDirections = removeExcessRotation(currentDirection - directionOfGreenTank);
         var newRotation;
@@ -544,14 +543,15 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           newPosition[1] = getRandom(-3, 3);
           newPosition[2] = position.z;
           //Uncomment this to make bullets appear at the tank's new destination. Useful for debugging
-//          space.add(new Entity("bullet",
-//            [
-//              new engine.core.Transform(newPosition),
-//              new cubicvr.Model(resources.bullet, resources.bulletMaterial)
-//            ]
-//          ));
+          space.add(new Entity("bullet",
+            [
+              new engine.core.Transform(newPosition),
+              new cubicvr.Model(resources.bullet, resources.bulletMaterial)
+            ]
+          ));
 
-          var currentRotation = redTankTransform.rotation.z;
+          //Multiply by negative 1 due to handedness differences between what atan2 will give us and what rotation.z is
+          var currentRotation = redTankTransform.rotation.z * -1;
           var directionToNewPosition = Math.atan2(newPosition[1] - position.y, newPosition[0] - position.x);
 
           changeInDirection = removeExcessRotation(directionToNewPosition + currentRotation);
@@ -559,7 +559,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
           //The tank will turn/move more or less depending on how high the frame rate is
           redTank.timeToRotate = Math.abs(changeInDirection)/tankRotationSpeed;
           redTank.timeToMove = position.distance(newPosition) / tankMovementSpeed;
-          redTank.rotationDirection = changeInDirection > 0 ? -1 : 1;
+          redTank.rotationDirection = changeInDirection > 0 ? 1 : -1;
           redTank.doneRotation = false;
           redTank.doneMovement = false;
           physicsBody.setAngularVelocity(tankRotationSpeed * redTank.rotationDirection);
