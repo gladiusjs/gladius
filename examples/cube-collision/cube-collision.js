@@ -32,12 +32,12 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
       var box2dOptions = {
         resolver: {
-          gravity: [0,-0.5]
+          dimensionMap: box2dExtension.services.resolver.service.prototype.DimensionMaps.XY
         }
       };
 
       engine.registerExtension( cubicvrExtension, cubicvrOptions );
-      engine.registerExtension( box2dExtension);//, box2dOptions);
+      engine.registerExtension( box2dExtension, box2dOptions);
 
       var resources = {};
 
@@ -102,13 +102,14 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
     var lightDefinition = new cubicvr.LightDefinition({
       intensity: 1,
+      distance: 20,
       light_type: cubicvr.LightDefinition.LightTypes.POINT,
       method: cubicvr.LightDefinition.LightingMethods.DYNAMIC
     });
 
     space.add( new engine.Entity( "camera",
       [
-        new engine.core.Transform( [0, 0, 5] ),
+        new engine.core.Transform( [0, 0, 10] ),
         new cubicvr.Light( lightDefinition ),
         new cubicvr.Camera( {
           targeted:false
@@ -117,7 +118,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
     ));
 
     var bodyDefinition = new box2d.BodyDefinition();
-    var fixtureDefinition = new box2d.FixtureDefinition({shape:new box2d.BoxShape(0.25,0.25)});
+    var fixtureDefinition = new box2d.FixtureDefinition({shape:new box2d.BoxShape(1,1)});
 
     for (var cubeIndex = 0; cubeIndex < 5; cubeIndex++){
 
@@ -132,7 +133,7 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
       };
       var firstCube = new engine.Entity( "cube1",
         [
-          new engine.core.Transform( [3 + cubeIndex * 1.5, 0.125, 0], [0, 0, 0], [0.5, 0.5, 0.5] ),
+          new engine.core.Transform( [3 + cubeIndex * 3, 0.25, 0], [0, 0, 0]),
           firstBody,
           new cubicvr.Model( resources.mesh, resources.material )
         ]
@@ -151,14 +152,14 @@ document.addEventListener( "DOMContentLoaded", function( e ) {
 
       var secondCube = new engine.Entity( "cube2",
         [
-          new engine.core.Transform( [-3 - cubeIndex * 1.5, -0.125, 0], [0, 0, 0], [0.5, 0.5, 0.5] ),
+          new engine.core.Transform( [-3 - cubeIndex * 3, -0.25, 0], [0, 0, 0]),
           secondBody,
           new cubicvr.Model( resources.mesh, resources.material )
         ]
       );
       space.add( secondCube );
-      new engine.Event("LinearImpulse", {impulse: [-0.25,0]}).dispatch(firstCube);
-      new engine.Event("LinearImpulse", {impulse: [0.25,0]}).dispatch(secondCube);
+      new engine.Event("LinearImpulse", {impulse: [-1,0]}).dispatch(firstCube);
+      new engine.Event("LinearImpulse", {impulse: [1,0]}).dispatch(secondCube);
     }
 
     var task = new engine.FunctionTask( function() {

@@ -4,7 +4,9 @@
     "MoveBackward": [ "S" ],
     "TurnLeft": [ "A" ],
     "TurnRight": [ "D" ],
-    "StrafeModifier": [ "SHIFT" ]
+    "StrafeModifier": [ "SHIFT" ],
+    "TurnTurretLeft": [ "LEFT" ],
+    "TurnTurretRight": [ "RIGHT" ]
   },
   "Actions": {
     "Fire": [ "SPACE" ]
